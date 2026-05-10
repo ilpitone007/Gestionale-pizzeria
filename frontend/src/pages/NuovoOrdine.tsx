@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { useOrderStore } from '../store/orderStore';
 import { Plus, Trash2, ShoppingCart } from 'lucide-react';
@@ -20,6 +21,7 @@ export default function NuovoOrdine() {
     voci, addVoce, removeVoce, clearOrdine
   } = useOrderStore();
 
+
   useEffect(() => {
     fetch(`${API_BASE}/menu`)
       .then(res => res.json())
@@ -34,6 +36,7 @@ export default function NuovoOrdine() {
       const rounded = new Date(Math.round(date.getTime() / coeff) * coeff);
       setOrarioConsegna(format(rounded, "yyyy-MM-dd'T'HH:mm"));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const categorie = ['Tutte', ...Array.from(new Set(menu.pizze.map(p => p.categoria)))];

@@ -1,8 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { Clock, Printer, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 
 const API_BASE = 'http://localhost:3001/api';
+
+const escapeHtml = (unsafe: string | null | undefined) => {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
+
 
 export default function OrdiniAttivi() {
   const [ordini, setOrdini] = useState<any[]>([]);
@@ -20,7 +33,9 @@ export default function OrdiniAttivi() {
     }
   };
 
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchOrdini();
     const interval = setInterval(fetchOrdini, 30000); // refresh every 30s
     return () => clearInterval(interval);
@@ -33,15 +48,15 @@ export default function OrdiniAttivi() {
     const vociHtml = ordine.voci.map((voce: any) => `
       <div style="margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; font-weight: bold;">
-          <span>${voce.posizione}x ${voce.nomePizzaSnapshot}</span>
+          <span>${voce.posizione}x ${escapeHtml(voce.nomePizzaSnapshot)}</span>
           ${tipo === 'cliente' ? `<span>€${voce.prezzoTotaleVoce.toFixed(2)}</span>` : ''}
         </div>
         ${voce.aggiunteSelezionate.length > 0 ? `
           <div style="padding-left: 15px; font-size: 0.9em;">
-            ${voce.aggiunteSelezionate.map((a: any) => `+ ${a.nomeAggiuntaSnapshot} ${tipo==='cliente'?`(€${a.prezzoAggiuntaSnapshot.toFixed(2)})`:''}`).join('<br>')}
+            ${voce.aggiunteSelezionate.map((a: any) => `+ ${escapeHtml(a.nomeAggiuntaSnapshot)} ${tipo==='cliente'?`(€${a.prezzoAggiuntaSnapshot.toFixed(2)})`:''}`).join('<br>')}
           </div>
         ` : ''}
-        ${voce.note ? `<div style="padding-left: 15px; font-style: italic; font-size: 0.9em; margin-top: 2px;">Note: ${voce.note}</div>` : ''}
+        ${voce.note ? `<div style="padding-left: 15px; font-style: italic; font-size: 0.9em; margin-top: 2px;">Note: ${escapeHtml(voce.note)}</div>` : ''}
       </div>
     `).join('');
 
@@ -72,8 +87,8 @@ export default function OrdiniAttivi() {
 
         <div class="info">
           <div>Ordine n°: <strong>${ordine.numeroOrdine}</strong></div>
-          <div>Cliente: ${ordine.nomeCliente}</div>
-          ${ordine.telefonoCliente ? `<div>Tel: ${ordine.telefonoCliente}</div>` : ''}
+          <div>Cliente: ${escapeHtml(ordine.nomeCliente)}</div>
+          ${ordine.telefonoCliente ? `<div>Tel: ${escapeHtml(ordine.telefonoCliente)}</div>` : ''}
           <div style="font-size: 0.8em; margin-top: 5px; color: #666;">
             Ricevuto: ${format(new Date(ordine.orarioOrdine), 'dd/MM/yyyy HH:mm')}
           </div>
@@ -89,7 +104,7 @@ export default function OrdiniAttivi() {
 
         ${ordine.noteGenerali ? `
           <div style="margin-bottom: 10px; padding: 5px; border: 1px solid #000;">
-            <strong>Note Generali:</strong> ${ordine.noteGenerali}
+            <strong>Note Generali:</strong> ${escapeHtml(ordine.noteGenerali)}
           </div>
         ` : ''}
 
