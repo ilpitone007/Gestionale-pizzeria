@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Previeni zoom automatico su input in iOS */
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+@layer components {
+  /* Target touch minimo (WCAG 2.5.5) */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@media print {
+  @page { margin: 0; }
+  body { margin: 0; padding: 10px; font-family: monospace; }
+  .no-print { display: none !important; }
+}
