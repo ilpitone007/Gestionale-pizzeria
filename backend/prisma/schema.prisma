@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model CategoriaPizza {
+  id     Int     @id @default(autoincrement())
+  nome   String  @unique
+  ordine Int     @default(0)
+  pizze  Pizza[]
+
+  @@map("categorie_pizza")
+}
+
+model Pizza {
+  id           Int            @id @default(autoincrement())
+  nome         String         @unique
+  descrizione  String?
+  categoriaId  Int            @map("categoria_id")
+  prezzoBase   Float          @map("prezzo_base")
+  disponibile  Boolean        @default(true)
+  immagineUrl  String?        @map("immagine_url")
+  creatoIl     DateTime       @default(now()) @map("creato_il")
+  modificatoIl DateTime       @default(now()) @updatedAt @map("modificato_il")
+  categoria    CategoriaPizza @relation(fields: [categoriaId], references: [id])
+  ingredienti  PizzaIngrediente[]
+  voci         VoceOrdine[]
+
+  @@map("pizze")
+}
+
+model Ingrediente {
+  id    Int    @id @default(autoincrement())
+  nome  String @unique
+  pizze PizzaIngrediente[]
+
+  @@map("ingredienti")
+}
+
+model PizzaIngrediente {
+  pizzaId       Int
+  ingredienteId Int
+  pizza         Pizza       @relation(fields: [pizzaId], references: [id], onDelete: Cascade)
+  ingrediente   Ingrediente @relation(fields: [ingredienteId], references: [id], onDelete: Cascade)
+
+  @@id([pizzaId, ingredienteId])
+  @@map("pizza_ingredienti")
+}
+
+model CategoriaAggiunta {
+  id       Int        @id @default(autoincrement())
+  nome     String     @unique
+  aggiunte Aggiunta[]
+
+  @@map("categorie_aggiunta")
+}
+
+model Aggiunta {
+  id            Int                 @id @default(autoincrement())
+  nome          String              @unique
+  prezzo        Float               @default(0)
+  categoriaId   Int?                @map("categoria_id")
+  disponibile   Boolean             @default(true)
+  categoria     CategoriaAggiunta?  @relation(fields: [categoriaId], references: [id])
+  vociAssociate VoceAggiunteSelezionate[]
+
+  @@map("aggiunte")
+}
+
+model Ordine {
+  id               Int          @id @default(autoincrement())
+  numeroOrdine     Int          @map("numero_ordine")
+  dataOrdine       DateTime     @default(now()) @map("data_ordine")
+  nomeCliente      String       @map("nome_cliente")
+  telefonoCliente  String?      @map("telefono_cliente")
+  orarioOrdine     DateTime     @default(now()) @map("orario_ordine")
+  orarioConsegna   DateTime     @map("orario_consegna")
+  tipoRitiro       String       @default("asporto") @map("tipo_ritiro")
+  stato            String       @default("in_corso")
+  noteGenerali     String?      @map("note_generali")
+  totaleOrdine     Float        @default(0) @map("totale_ordine")
+  creatoIl         DateTime     @default(now()) @map("creato_il")
+  modificatoIl     DateTime     @default(now()) @updatedAt @map("modificato_il")
+  voci             VoceOrdine[]
+
+  @@unique([numeroOrdine, dataOrdine])
+  @@map("ordini")
+}
+
+model VoceOrdine {
+  id                   Int          @id @default(autoincrement())
+  ordineId             Int          @map("ordine_id")
+  pizzaId              Int?         @map("pizza_id")
+  nomePizzaSnapshot    String       @map("nome_pizza_snapshot")
+  prezzoBaseSnapshot   Float        @map("prezzo_base_snapshot")
+  note                 String?
+  prezzoTotaleVoce     Float        @map("prezzo_totale_voce")
+  posizione            Int          @default(1)
+  ordine               Ordine       @relation(fields: [ordineId], references: [id], onDelete: Cascade)
+  pizza                Pizza?       @relation(fields: [pizzaId], references: [id], onDelete: SetNull)
+  aggiunteSelezionate  VoceAggiunteSelezionate[]
+
+  @@map("voci_ordine")
+}
+
+model VoceAggiunteSelezionate {
+  id                     Int          @id @default(autoincrement())
+  voceOrdineId           Int          @map("voce_ordine_id")
+  aggiuntaId             Int?         @map("aggiunta_id")
+  nomeAggiuntaSnapshot   String       @map("nome_aggiunta_snapshot")
+  prezzoAggiuntaSnapshot Float        @map("prezzo_aggiunta_snapshot")
+  voceOrdine             VoceOrdine   @relation(fields: [voceOrdineId], references: [id], onDelete: Cascade)
+  aggiunta               Aggiunta?    @relation(fields: [aggiuntaId], references: [id], onDelete: SetNull)
+
+  @@map("voce_aggiunte_selezionate")
+}
