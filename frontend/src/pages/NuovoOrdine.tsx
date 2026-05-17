@@ -96,9 +96,9 @@ export default function NuovoOrdine() {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex flex-col md:flex-row h-full">
       {/* Left Column: Menu */}
-      <div className="flex-1 p-6 flex flex-col gap-6 overflow-auto">
+      <div className="flex-1 p-4 md:p-6 flex flex-col gap-4 md:gap-6 overflow-auto">
         <h2 className="text-2xl font-bold">Menu</h2>
 
         {/* Categories */}
@@ -140,7 +140,7 @@ export default function NuovoOrdine() {
       </div>
 
       {/* Right Column: Cart */}
-      <div className="w-96 bg-white border-l flex flex-col h-full shadow-lg">
+      <div className="w-full md:w-96 bg-white border-t md:border-t-0 md:border-l flex flex-col min-h-[50vh] md:min-h-0 md:h-full shadow-lg">
         <div className="p-4 border-b bg-gray-50">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" /> Nuovo Ordine
