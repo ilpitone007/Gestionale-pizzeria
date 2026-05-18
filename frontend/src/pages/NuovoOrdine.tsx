@@ -13,6 +13,9 @@ export default function NuovoOrdine() {
   const [tempNote, setTempNote] = useState('');
 
   const {
+    orderId,
+    tipoRitiro, setTipoRitiro,
+    numeroTavolo, setNumeroTavolo,
     nomeCliente, setNomeCliente,
     telefonoCliente, setTelefonoCliente,
     orarioConsegna, setOrarioConsegna,
@@ -71,27 +74,36 @@ export default function NuovoOrdine() {
     if (voci.length === 0) return alert('Aggiungi almeno una pizza');
 
     try {
-      const res = await fetch(`${API_BASE}/ordini`, {
-        method: 'POST',
+      const isEditing = orderId !== null;
+      const endpoint = isEditing ? `${API_BASE}/ordini/${orderId}` : `${API_BASE}/ordini`;
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nomeCliente,
           telefonoCliente,
           orarioConsegna: new Date(orarioConsegna).toISOString(),
+          tipoRitiro,
+          numeroTavolo: tipoRitiro === 'tavolo' ? numeroTavolo : null,
           noteGenerali,
           voci
         })
       });
 
       if (res.ok) {
-        alert('Ordine creato con successo!');
+        alert(isEditing ? 'Ordine aggiornato con successo!' : 'Ordine creato con successo!');
         clearOrdine();
+        if (isEditing) {
+          window.location.href = '/ordini';
+        }
       } else {
-        alert('Errore durante la creazione');
+        alert('Errore durante il salvataggio');
       }
     } catch (e) {
       console.error(e);
-      alert('Errore di connessione');
+      alert('Errore di connessione al server');
     }
   };
 
@@ -143,12 +155,40 @@ export default function NuovoOrdine() {
       <div className="w-full md:w-96 bg-white border-t md:border-t-0 md:border-l flex flex-col min-h-[50vh] md:min-h-0 md:h-full shadow-lg">
         <div className="p-4 border-b bg-gray-50">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5" /> Nuovo Ordine
+            <ShoppingCart className="w-5 h-5" /> {orderId ? `Modifica Ordine #${orderId}` : 'Nuovo Ordine'}
           </h2>
         </div>
 
         {/* Customer Details */}
         <div className="p-4 border-b space-y-3 bg-white">
+          <div className="flex gap-2 mb-2 p-1 bg-gray-100 rounded-lg">
+            <button
+              className={`flex-1 py-1 text-sm font-medium rounded ${tipoRitiro === 'asporto' ? 'bg-white shadow' : 'text-gray-500'}`}
+              onClick={() => setTipoRitiro('asporto')}
+            >
+              Asporto
+            </button>
+            <button
+              className={`flex-1 py-1 text-sm font-medium rounded ${tipoRitiro === 'tavolo' ? 'bg-white shadow' : 'text-gray-500'}`}
+              onClick={() => setTipoRitiro('tavolo')}
+            >
+              Al Tavolo
+            </button>
+          </div>
+
+          {tipoRitiro === 'tavolo' && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Numero Tavolo *</label>
+              <input
+                type="number"
+                className="w-full border rounded p-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
+                value={numeroTavolo}
+                onChange={e => setNumeroTavolo(e.target.value)}
+                placeholder="Es. 4"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Nome Cliente *</label>
             <input
@@ -238,11 +278,19 @@ export default function NuovoOrdine() {
           </div>
           <button
             onClick={handleSubmit}
-            disabled={voci.length === 0 || !nomeCliente}
+            disabled={voci.length === 0 || !nomeCliente || (tipoRitiro === 'tavolo' && !numeroTavolo)}
             className="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Conferma Ordine
+            {orderId ? 'Salva Modifiche' : 'Conferma Ordine'}
           </button>
+          {orderId && (
+             <button
+             onClick={clearOrdine}
+             className="w-full mt-2 bg-gray-200 text-gray-700 font-bold py-2 rounded-lg hover:bg-gray-300 transition-colors"
+           >
+             Annulla Modifica
+           </button>
+          )}
         </div>
       </div>
 

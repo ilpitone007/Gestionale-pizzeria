@@ -50,10 +50,39 @@ app.get('/api/menu', async (req, res) => {
   }
 });
 
+// API: Impostazioni
+app.get('/api/impostazioni', async (req, res) => {
+  try {
+    const impostazioni = await prisma.impostazione.findMany();
+    const result = impostazioni.reduce((acc, curr) => ({ ...acc, [curr.chiave]: curr.valore }), {});
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Errore durante il recupero delle impostazioni' });
+  }
+});
+
+app.post('/api/impostazioni', async (req, res) => {
+  try {
+    const data = req.body; // { chiave: 'valore', chiave2: 'valore2' }
+    for (const [chiave, valore] of Object.entries(data)) {
+      await prisma.impostazione.upsert({
+        where: { chiave },
+        update: { valore: String(valore) },
+        create: { chiave, valore: String(valore) }
+      });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Errore durante il salvataggio delle impostazioni' });
+  }
+});
+
 // API: Crea Ordine
 app.post('/api/ordini', async (req, res) => {
   try {
-    const { nomeCliente, telefonoCliente, orarioConsegna, noteGenerali, voci } = req.body;
+    const { nomeCliente, telefonoCliente, orarioConsegna, noteGenerali, voci, tipoRitiro, numeroTavolo } = req.body;
 
     // 1. Get current max order number for today
     const startOfDay = new Date();
@@ -110,6 +139,8 @@ app.post('/api/ordini', async (req, res) => {
         nomeCliente,
         telefonoCliente,
         orarioConsegna: new Date(orarioConsegna),
+        tipoRitiro: tipoRitiro || 'asporto',
+        numeroTavolo: numeroTavolo ? parseInt(numeroTavolo, 10) : null,
         noteGenerali,
         totaleOrdine,
         voci: {
@@ -129,6 +160,76 @@ app.post('/api/ordini', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Errore durante la creazione dell\'ordine' });
+  }
+});
+
+// API: Modifica Ordine
+app.put('/api/ordini/:id', async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id, 10);
+    const { nomeCliente, telefonoCliente, orarioConsegna, noteGenerali, voci, tipoRitiro, numeroTavolo } = req.body;
+
+    let totaleOrdine = 0;
+
+    // We simply delete existing voci and recreate them to simplify updates
+    await prisma.voceOrdine.deleteMany({
+      where: { ordineId: orderId }
+    });
+
+    const vociCreate = voci.map((voce: any, index: number) => {
+      let prezzoTotaleVoce = voce.prezzoBase;
+      const aggiunteSelezionate = voce.aggiunte.map((agg: any) => {
+        prezzoTotaleVoce += agg.prezzo;
+        return {
+          aggiuntaId: agg.id,
+          nomeAggiuntaSnapshot: agg.nome,
+          prezzoAggiuntaSnapshot: agg.prezzo
+        };
+      });
+
+      totaleOrdine += prezzoTotaleVoce;
+
+      return {
+        pizzaId: voce.pizzaId,
+        nomePizzaSnapshot: voce.nomePizza,
+        prezzoBaseSnapshot: voce.prezzoBase,
+        note: voce.note,
+        prezzoTotaleVoce,
+        posizione: index + 1,
+        aggiunteSelezionate: {
+          create: aggiunteSelezionate
+        }
+      };
+    });
+
+    const ordine = await prisma.ordine.update({
+      where: { id: orderId },
+      data: {
+        nomeCliente,
+        telefonoCliente,
+        orarioConsegna: new Date(orarioConsegna),
+        tipoRitiro: tipoRitiro || 'asporto',
+        numeroTavolo: numeroTavolo ? parseInt(numeroTavolo, 10) : null,
+        noteGenerali,
+        totaleOrdine,
+        modificatoIl: new Date(),
+        voci: {
+          create: vociCreate
+        }
+      },
+      include: {
+        voci: {
+          include: {
+            aggiunteSelezionate: true
+          }
+        }
+      }
+    });
+
+    res.json(ordine);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Errore durante la modifica dell\'ordine' });
   }
 });
 

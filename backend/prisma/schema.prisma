@@ -80,6 +80,7 @@ model Ordine {
   orarioOrdine     DateTime     @default(now()) @map("orario_ordine")
   orarioConsegna   DateTime     @map("orario_consegna")
   tipoRitiro       String       @default("asporto") @map("tipo_ritiro")
+  numeroTavolo     Int?         @map("numero_tavolo")
   stato            String       @default("in_corso")
   noteGenerali     String?      @map("note_generali")
   totaleOrdine     Float        @default(0) @map("totale_ordine")
@@ -117,4 +118,11 @@ model VoceAggiuntaSelezionata {
   aggiunta               Aggiunta?   @relation(fields: [aggiuntaId], references: [id], onDelete: SetNull)
 
   @@map("voce_aggiunte_selezionate")
+}
+
+model Impostazione {
+  chiave  String @id
+  valore  String
+
+  @@map("impostazioni")
 }

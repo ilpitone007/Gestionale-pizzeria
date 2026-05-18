@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Clock, Printer, Phone } from 'lucide-react';
+import { Clock, Printer, Phone, Edit } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import { useOrderStore } from '../store/orderStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export default function OrdiniAttivi() {
   const [ordini, setOrdini] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const loadOrder = useOrderStore(state => state.loadOrder);
 
   const fetchOrdini = async () => {
     try {
@@ -185,18 +189,29 @@ export default function OrdiniAttivi() {
               </div>
 
               {/* Card Footer (Actions) */}
-              <div className="p-3 border-t bg-gray-50 flex gap-2">
+              <div className="p-3 border-t bg-gray-50 flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handlePrint(ordine, 'cucina')}
+                    className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 text-sm font-medium transition-colors"
+                  >
+                    <Printer className="w-4 h-4" /> Cucina
+                  </button>
+                  <button
+                    onClick={() => handlePrint(ordine, 'cliente')}
+                    className="flex-1 bg-gray-800 text-white py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-900 text-sm font-medium transition-colors"
+                  >
+                    <Printer className="w-4 h-4" /> Scontrino
+                  </button>
+                </div>
                 <button
-                  onClick={() => handlePrint(ordine, 'cucina')}
-                  className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 text-sm font-medium transition-colors"
+                  onClick={() => {
+                    loadOrder(ordine);
+                    navigate('/ordini/nuovo');
+                  }}
+                  className="w-full bg-blue-50 text-blue-700 border border-blue-200 py-2 rounded flex items-center justify-center gap-2 hover:bg-blue-100 text-sm font-medium transition-colors"
                 >
-                  <Printer className="w-4 h-4" /> Cucina
-                </button>
-                <button
-                  onClick={() => handlePrint(ordine, 'cliente')}
-                  className="flex-1 bg-gray-800 text-white py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-900 text-sm font-medium transition-colors"
-                >
-                  <Printer className="w-4 h-4" /> Scontrino
+                  <Edit className="w-4 h-4" /> Modifica Ordine
                 </button>
               </div>
             </div>
