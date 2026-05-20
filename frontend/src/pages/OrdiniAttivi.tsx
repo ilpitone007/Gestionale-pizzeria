@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Clock, Printer, Phone, CheckCircle } from 'lucide-react';
+import { Clock, Printer, Phone, CheckCircle, Edit, Trash2, Home } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export default function OrdiniAttivi() {
   const [ordini, setOrdini] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchOrdini = useCallback(async () => {
     try {
@@ -37,6 +39,20 @@ export default function OrdiniAttivi() {
     } catch (e) { console.error(e); }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm('Sei sicuro di voler eliminare definitivamente questo ordine?')) return;
+    try {
+      await fetch(`${API_BASE}/ordini/${id}`, {
+        method: 'DELETE'
+      });
+      fetchOrdini();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleEdit = (id: number) => {
+    navigate(`/ordini/nuovo?edit=${id}`);
+  };
+
   const handlePrint = (ordine: any, tipo: 'cucina' | 'cliente') => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -51,6 +67,9 @@ export default function OrdiniAttivi() {
           <div style="padding-left: 15px; font-size: 0.9em;">
             ${voce.aggiunteSelezionate.map((a: any) => `+ ${a.nomeAggiuntaSnapshot} ${tipo==='cliente'?`(€${a.prezzoAggiuntaSnapshot.toFixed(2)})`:''}`).join('<br>')}
           </div>
+        ` : ''}
+        ${voce.nomeImpastoSnapshot && voce.nomeImpastoSnapshot !== 'Classico' ? `
+          <div style="padding-left: 15px; font-size: 0.9em;">Impasto: ${voce.nomeImpastoSnapshot}</div>
         ` : ''}
         ${voce.note ? `<div style="padding-left: 15px; font-style: italic; font-size: 0.9em; margin-top: 2px;">Note: ${voce.note}</div>` : ''}
       </div>
@@ -85,6 +104,7 @@ export default function OrdiniAttivi() {
           <div>Ordine n°: <strong>${ordine.numeroOrdine}</strong></div>
           <div>Cliente: ${ordine.nomeCliente}</div>
           ${ordine.telefonoCliente ? `<div>Tel: ${ordine.telefonoCliente}</div>` : ''}
+          ${ordine.tipoRitiro === 'domicilio' ? `<div style="margin-top: 5px; padding: 5px; border: 1px solid #000;"><strong>DOMICILIO:</strong><br/>${ordine.indirizzoConsegna}<br/>${ordine.noteCitofono ? `Note: ${ordine.noteCitofono}` : ''}</div>` : ''}
           <div style="font-size: 0.9em; margin-top: 5px; color: #000;">
             Data Ordine: ${format(new Date(ordine.orarioOrdine), 'dd/MM/yyyy')}<br/>
             Ora Ricezione: ${format(new Date(ordine.orarioOrdine), 'HH:mm')}
@@ -160,6 +180,11 @@ export default function OrdiniAttivi() {
                       <Phone className="w-3 h-3" /> {ordine.telefonoCliente}
                     </div>
                   )}
+                  {ordine.tipoRitiro === 'domicilio' && (
+                    <div className="text-xs text-blue-700 bg-blue-50 mt-2 p-1.5 rounded inline-flex items-center gap-1 font-medium">
+                      <Home className="w-3 h-3"/> Domicilio: {ordine.indirizzoConsegna}
+                    </div>
+                  )}
                 </div>
                 <div className={`text-right ${isLate ? 'text-red-600' : isUrgent ? 'text-orange-600' : 'text-green-600'}`}>
                   <div className="text-2xl font-black flex items-center gap-1 justify-end">
@@ -197,26 +222,41 @@ export default function OrdiniAttivi() {
               </div>
 
               {/* Card Footer (Actions) */}
-              <div className="p-3 border-t bg-gray-50 flex gap-2">
-                <button
-                  onClick={() => handlePrint(ordine, 'cucina')}
-                  className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 px-1 rounded flex items-center justify-center gap-1 md:gap-2 hover:bg-gray-50 text-[11px] md:text-sm font-medium transition-colors"
-                >
-                  <Printer className="w-4 h-4" /> Cucina
-                </button>
-                <button
-                  onClick={() => handlePrint(ordine, 'cliente')}
-                  className="flex-1 bg-gray-800 text-white py-2 px-1 rounded flex items-center justify-center gap-1 md:gap-2 hover:bg-gray-900 text-[11px] md:text-sm font-medium transition-colors"
-                >
-                  <Printer className="w-4 h-4" /> Scontrino
-                </button>
-                <button
-                  onClick={() => handleEvaso(ordine.id)}
-                  className="flex-1 bg-green-600 text-white py-2 px-1 rounded flex items-center justify-center gap-1 md:gap-2 hover:bg-green-700 text-[11px] md:text-sm font-medium transition-colors"
-                  title="Segna come Evaso/Ritirato per le statistiche"
-                >
-                  <CheckCircle className="w-4 h-4" /> Evaso
-                </button>
+              <div className="p-3 border-t bg-gray-50 flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handlePrint(ordine, 'cucina')}
+                    className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 px-1 rounded flex items-center justify-center gap-1 hover:bg-gray-50 text-[11px] md:text-sm font-medium transition-colors"
+                  >
+                    <Printer className="w-3 h-3 md:w-4 md:h-4" /> Cucina
+                  </button>
+                  <button
+                    onClick={() => handlePrint(ordine, 'cliente')}
+                    className="flex-1 bg-gray-800 text-white py-2 px-1 rounded flex items-center justify-center gap-1 hover:bg-gray-900 text-[11px] md:text-sm font-medium transition-colors"
+                  >
+                    <Printer className="w-3 h-3 md:w-4 md:h-4" /> Scontrino
+                  </button>
+                  <button
+                    onClick={() => handleEvaso(ordine.id)}
+                    className="flex-1 bg-green-600 text-white py-2 px-1 rounded flex items-center justify-center gap-1 hover:bg-green-700 text-[11px] md:text-sm font-medium transition-colors"
+                  >
+                    <CheckCircle className="w-3 h-3 md:w-4 md:h-4" /> Evaso
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(ordine.id)}
+                    className="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-1.5 rounded flex items-center justify-center gap-1 hover:bg-blue-100 text-[11px] md:text-sm transition-colors font-medium"
+                  >
+                    <Edit className="w-3 h-3" /> Modifica
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ordine.id)}
+                    className="flex-1 bg-red-50 text-red-700 border border-red-200 py-1.5 rounded flex items-center justify-center gap-1 hover:bg-red-100 text-[11px] md:text-sm transition-colors font-medium"
+                  >
+                    <Trash2 className="w-3 h-3" /> Annulla/Elimina
+                  </button>
+                </div>
               </div>
             </div>
           );

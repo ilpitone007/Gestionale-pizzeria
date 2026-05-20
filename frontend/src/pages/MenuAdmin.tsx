@@ -6,6 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 export default function MenuAdmin() {
   const [pizze, setPizze] = useState<any[]>([]);
   const [aggiunte, setAggiunte] = useState<any[]>([]);
+  const [impasti, setImpasti] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -17,6 +18,10 @@ export default function MenuAdmin() {
       const resAggiunte = await fetch(`${API_BASE}/admin/aggiunte`);
       const dataAggiunte = await resAggiunte.json();
       setAggiunte(dataAggiunte);
+
+      const resImpasti = await fetch(`${API_BASE}/admin/impasti`);
+      const dataImpasti = await resImpasti.json();
+      setImpasti(dataImpasti);
     } catch (e) {
       console.error(e);
     } finally {
@@ -30,6 +35,15 @@ export default function MenuAdmin() {
 
   const togglePizza = async (id: number, currentStatus: boolean) => {
     await fetch(`${API_BASE}/admin/pizze/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ disponibile: !currentStatus })
+    });
+    fetchData();
+  };
+
+  const toggleImpasto = async (id: number, currentStatus: boolean) => {
+    await fetch(`${API_BASE}/admin/impasti/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ disponibile: !currentStatus })
@@ -51,7 +65,7 @@ export default function MenuAdmin() {
   return (
     <div className="p-4 md:p-8 h-full overflow-auto bg-gray-50">
       <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <Settings className="w-6 h-6" /> Gestione Disponibilità Menu
+        <Settings className="w-6 h-6" /> Gestione Menu e Disponibilità
       </h2>
 
       <div className="grid md:grid-cols-2 gap-8">
@@ -82,25 +96,47 @@ export default function MenuAdmin() {
         {/* Aggiunte & Extra */}
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <div className="p-4 bg-gray-100 border-b">
-            <h3 className="font-bold text-lg">Ingredienti Extra</h3>
+            <h3 className="font-bold text-lg">Ingredienti Extra e Impasti</h3>
           </div>
-          <ul className="divide-y max-h-[60vh] overflow-y-auto">
-            {aggiunte.map((a) => (
-              <li key={a.id} className={`p-4 flex justify-between items-center transition-colors ${!a.disponibile ? 'bg-red-50 opacity-75' : 'hover:bg-gray-50'}`}>
-                <div>
-                  <div className={`font-bold ${!a.disponibile && 'line-through text-red-800'}`}>{a.nome}</div>
-                  <div className="text-xs text-gray-500">{a.categoria?.nome || 'Extra'} • +€{a.prezzo.toFixed(2)}</div>
-                </div>
-                <button
-                  onClick={() => toggleAggiunta(a.id, a.disponibile)}
-                  className={`p-2 rounded-full ${a.disponibile ? 'bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600' : 'bg-red-600 text-white shadow-md'}`}
-                  title={a.disponibile ? "Nascondi dal menu" : "Rendi disponibile"}
-                >
-                  {a.disponibile ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="max-h-[60vh] overflow-y-auto">
+            <ul className="divide-y">
+              {aggiunte.map((a: any) => (
+                <li key={a.id as number} className={`p-4 flex justify-between items-center transition-colors ${!a.disponibile ? 'bg-red-50 opacity-75' : 'hover:bg-gray-50'}`}>
+                  <div>
+                    <div className={`font-bold ${!a.disponibile && 'line-through text-red-800'}`}>{a.nome}</div>
+                    <div className="text-xs text-gray-500">{a.categoria?.nome || 'Extra'} • +€{a.prezzo.toFixed(2)}</div>
+                  </div>
+                  <button
+                    onClick={() => toggleAggiunta(a.id as number, a.disponibile as boolean)}
+                    className={`p-2 rounded-full ${a.disponibile ? 'bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600' : 'bg-red-600 text-white shadow-md'}`}
+                    title={a.disponibile ? "Nascondi dal menu" : "Rendi disponibile"}
+                  >
+                    {a.disponibile ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="p-4 bg-gray-100 border-y mt-2">
+              <h3 className="font-bold text-lg">Impasti Alternativi</h3>
+            </div>
+            <ul className="divide-y">
+              {impasti.map((i: any) => (
+                <li key={i.id as number} className={`p-4 flex justify-between items-center transition-colors ${!i.disponibile ? 'bg-red-50 opacity-75' : 'hover:bg-gray-50'}`}>
+                  <div>
+                    <div className={`font-bold ${!i.disponibile && 'line-through text-red-800'}`}>{i.nome}</div>
+                    <div className="text-xs text-gray-500">Impasto base • {i.sovrapprezzo > 0 ? `+€${i.sovrapprezzo.toFixed(2)}` : 'Senza sovrapprezzo'}</div>
+                  </div>
+                  <button
+                    onClick={() => toggleImpasto(i.id as number, i.disponibile as boolean)}
+                    className={`p-2 rounded-full ${i.disponibile ? 'bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600' : 'bg-red-600 text-white shadow-md'}`}
+                    title={i.disponibile ? "Nascondi dal menu" : "Rendi disponibile"}
+                  >
+                    {i.disponibile ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>

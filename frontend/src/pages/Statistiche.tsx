@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
-import { BarChart2, TrendingUp, CheckCircle, Package } from 'lucide-react';
+import { BarChart2, TrendingUp, CheckCircle, Package, Download } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -26,6 +26,32 @@ export default function Statistiche() {
     fetchStats();
   }, [fetchStats]);
 
+
+  const exportCSV = () => {
+    if (!stats || !stats.ordiniDettaglio) return;
+
+    const headers = ['Numero Ordine', 'Cliente', 'Telefono', 'Tipo Ritiro', 'Orario Consegna', 'Stato', 'Totale', 'Articoli'];
+    const rows = stats.ordiniDettaglio.map((o: any) => [
+      o.numeroOrdine,
+      `"${o.nomeCliente}"`,
+      o.telefonoCliente || '',
+      o.tipoRitiro,
+      format(new Date(o.orarioConsegna), 'HH:mm'),
+      o.stato,
+      o.totaleOrdine.toFixed(2),
+      `"${o.voci.map((v: any) => `${v.nomePizzaSnapshot} ${v.nomeImpastoSnapshot && v.nomeImpastoSnapshot !== 'Classico' ? `(${v.nomeImpastoSnapshot})` : ''}`).join(', ')}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `ordini_${dataCorrente}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-gray-500">Caricamento statistiche...</div>;
   }
@@ -46,6 +72,12 @@ export default function Statistiche() {
             onChange={(e) => setDataCorrente(e.target.value)}
           />
         </div>
+
+        {stats && stats.ordiniDettaglio && (
+          <button onClick={exportCSV} className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors shadow-sm">
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+        )}
       </div>
 
       {!stats ? (

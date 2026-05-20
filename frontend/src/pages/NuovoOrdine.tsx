@@ -1,23 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useOrderStore } from '../store/orderStore';
-import { Plus, Trash2, ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Plus, Trash2, Home, Package } from 'lucide-react';
 import { format } from 'date-fns';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export default function NuovoOrdine() {
-  const [menu, setMenu] = useState<{ pizze: any[], categorieAggiunta: any[] }>({ pizze: [], categorieAggiunta: [] });
+  const [menu, setMenu] = useState<{ pizze: any[], categorieAggiunta: any[], impasti: any[] }>({ pizze: [], categorieAggiunta: [], impasti: [] });
   const [selectedCategoria, setSelectedCategoria] = useState('Tutte');
   const [pizzaToCustomize, setPizzaToCustomize] = useState<any>(null);
   const [tempAggiunte, setTempAggiunte] = useState<any[]>([]);
+  const [tempImpasto, setTempImpasto] = useState<any>(null);
   const [tempNote, setTempNote] = useState('');
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const {
     nomeCliente, setNomeCliente,
     telefonoCliente, setTelefonoCliente,
     orarioConsegna, setOrarioConsegna,
     noteGenerali, setNoteGenerali,
-    voci, addVoce, removeVoce, clearOrdine
+    tipoRitiro, setTipoRitiro,
+    indirizzoConsegna, setIndirizzoConsegna,
+    noteCitofono, setNoteCitofono,
+    editOrderId,
+    voci, addVoce, removeVoce, clearOrdine, loadOrdine
   } = useOrderStore();
 
   useEffect(() => {
@@ -26,13 +34,19 @@ export default function NuovoOrdine() {
       .then(data => setMenu(data))
       .catch(err => console.error(err));
 
-    // Default time: now + 30 mins, rounded to next 5 mins
-    if (!orarioConsegna) {
-      const date = new Date();
-      date.setMinutes(date.getMinutes() + 30);
-      const coeff = 1000 * 60 * 5;
-      const rounded = new Date(Math.round(date.getTime() / coeff) * coeff);
-      setOrarioConsegna(format(rounded, "yyyy-MM-dd'T'HH:mm"));
+    const editId = searchParams.get('edit');
+    if (editId) {
+      fetch(`${API_BASE}/ordini/${editId}`)
+        .then(res => res.json())
+        .then(data => { if (data && !data.error) loadOrdine(data); });
+    } else {
+      if (!editOrderId && !orarioConsegna) {
+        const date = new Date();
+        date.setMinutes(date.getMinutes() + 30);
+        const coeff = 1000 * 60 * 5;
+        const rounded = new Date(Math.round(date.getTime() / coeff) * coeff);
+        setOrarioConsegna(format(rounded, "yyyy-MM-dd'T'HH:mm"));
+      }
     }
   }, []);
 
@@ -44,6 +58,7 @@ export default function NuovoOrdine() {
   const handleOpenCustomize = (pizza: any) => {
     setPizzaToCustomize(pizza);
     setTempAggiunte([]);
+    setTempImpasto(menu.impasti?.find((i: any) => i.nome === 'Classico') || null);
     setTempNote('');
   };
 
@@ -53,6 +68,7 @@ export default function NuovoOrdine() {
       nomePizza: pizzaToCustomize.nome,
       prezzoBase: pizzaToCustomize.prezzoBase,
       aggiunte: tempAggiunte,
+      impasto: tempImpasto,
       note: tempNote
     });
     setPizzaToCustomize(null);
@@ -61,7 +77,8 @@ export default function NuovoOrdine() {
   const calculateTotal = () => {
     return voci.reduce((sum, voce) => {
       const aggiunteTotal = voce.aggiunte.reduce((a, b) => a + b.prezzo, 0);
-      return sum + voce.prezzoBase + aggiunteTotal;
+      const impastoTotal = voce.impasto ? voce.impasto.sovrapprezzo : 0;
+      return sum + voce.prezzoBase + aggiunteTotal + impastoTotal;
     }, 0);
   };
 
@@ -69,25 +86,33 @@ export default function NuovoOrdine() {
     if (!nomeCliente) return alert('Inserisci il nome del cliente');
     if (!orarioConsegna) return alert('Inserisci l\'orario di consegna');
     if (voci.length === 0) return alert('Aggiungi almeno una pizza');
+    if (tipoRitiro === 'domicilio' && !indirizzoConsegna) return alert('Inserisci l\'indirizzo di consegna');
 
     try {
-      const res = await fetch(`${API_BASE}/ordini`, {
-        method: 'POST',
+      const method = editOrderId ? 'PUT' : 'POST';
+      const url = editOrderId ? `${API_BASE}/ordini/${editOrderId}` : `${API_BASE}/ordini`;
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nomeCliente,
           telefonoCliente,
           orarioConsegna: new Date(orarioConsegna).toISOString(),
           noteGenerali,
+          tipoRitiro,
+          indirizzoConsegna,
+          noteCitofono,
           voci
         })
       });
 
       if (res.ok) {
-        alert('Ordine creato con successo!');
+        alert(`Ordine ${editOrderId ? 'aggiornato' : 'creato'} con successo!`);
         clearOrdine();
+        navigate('/ordini');
       } else {
-        alert('Errore durante la creazione');
+        alert(`Errore durante ${editOrderId ? 'l\'aggiornamento' : 'la creazione'}`);
       }
     } catch (e) {
       console.error(e);
@@ -143,7 +168,10 @@ export default function NuovoOrdine() {
       <div className="w-full md:w-96 bg-white border-t-2 md:border-t-0 md:border-l flex flex-col h-auto md:min-h-0 md:h-full shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-lg">
         <div className="p-4 border-b bg-gray-50">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5" /> Nuovo Ordine
+            <ShoppingCart className="w-5 h-5" /> {editOrderId ? `Modifica Ordine #${editOrderId}` : 'Nuovo Ordine'}
+            {editOrderId && (
+              <button onClick={() => { clearOrdine(); navigate('/ordini/nuovo'); }} className="ml-auto text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">Annulla</button>
+            )}
           </h2>
         </div>
 
@@ -181,6 +209,38 @@ export default function NuovoOrdine() {
               />
             </div>
           </div>
+
+          {/* Toggle Ritiro/Domicilio */}
+          <div className="flex bg-gray-100 p-1 rounded-lg">
+            <button className={`flex-1 text-sm py-1.5 rounded-md font-medium transition-colors ${tipoRitiro === 'asporto' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setTipoRitiro('asporto')}>Asporto</button>
+            <button className={`flex-1 text-sm py-1.5 rounded-md font-medium transition-colors ${tipoRitiro === 'domicilio' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setTipoRitiro('domicilio')}>Domicilio</button>
+          </div>
+
+          {tipoRitiro === 'domicilio' && (
+            <div className="space-y-3 pt-2">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1"><Home className="w-3 h-3"/> Indirizzo *</label>
+                <input
+                  type="text"
+                  className="w-full border rounded p-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
+                  value={indirizzoConsegna}
+                  onChange={e => setIndirizzoConsegna(e.target.value)}
+                  placeholder="Via Roma 10"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Citofono / Note</label>
+                <input
+                  type="text"
+                  className="w-full border rounded p-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
+                  value={noteCitofono}
+                  onChange={e => setNoteCitofono(e.target.value)}
+                  placeholder="Rossi (Scala B)"
+                />
+              </div>
+            </div>
+          )}
+
         </div>
 
         {/* Cart Items */}
@@ -192,13 +252,18 @@ export default function NuovoOrdine() {
             </div>
           ) : (
             voci.map((voce, idx) => {
-              const voceTotal = voce.prezzoBase + voce.aggiunte.reduce((a, b) => a + b.prezzo, 0);
+              const voceTotal = voce.prezzoBase + (voce.impasto ? voce.impasto.sovrapprezzo : 0) + voce.aggiunte.reduce((a, b) => a + b.prezzo, 0);
               return (
                 <div key={voce.id} className="bg-white p-3 rounded-lg border shadow-sm">
                   <div className="flex justify-between font-bold mb-1">
                     <span>{idx + 1}. {voce.nomePizza}</span>
                     <span>€{voceTotal.toFixed(2)}</span>
                   </div>
+                  {voce.impasto && voce.impasto.nome !== 'Classico' && (
+                    <div className="text-sm text-yellow-700 mb-1">
+                      Impasto: {voce.impasto.nome} (+€{voce.impasto.sovrapprezzo.toFixed(2)})
+                    </div>
+                  )}
                   {voce.aggiunte.length > 0 && (
                     <div className="text-sm text-gray-600 mb-1">
                       {voce.aggiunte.map(a => `+ ${a.nome}`).join(', ')}
@@ -239,9 +304,9 @@ export default function NuovoOrdine() {
           <button
             onClick={handleSubmit}
             disabled={voci.length === 0 || !nomeCliente}
-            className="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className={`w-full text-white font-bold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${editOrderId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'}`}
           >
-            Conferma Ordine
+            {editOrderId ? 'Salva Modifiche' : 'Conferma Ordine'}
           </button>
         </div>
       </div>
@@ -256,6 +321,24 @@ export default function NuovoOrdine() {
             </div>
 
             <div className="p-4 overflow-auto flex-1">
+
+              {menu.impasti && menu.impasti.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="font-bold text-gray-700 mb-2 border-b pb-1 flex items-center gap-1"><Package className="w-4 h-4"/> Scegli Impasto</h4>
+                  <div className="space-y-2">
+                    <select
+                      className="w-full border rounded p-2 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
+                      value={tempImpasto?.id || ''}
+                      onChange={(e) => setTempImpasto(menu.impasti.find((i: any) => i.id === parseInt(e.target.value)))}
+                    >
+                      {menu.impasti.map(imp => (
+                        <option key={imp.id} value={imp.id}>{imp.nome} {imp.sovrapprezzo > 0 ? `(+€${imp.sovrapprezzo.toFixed(2)})` : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
               {menu.categorieAggiunta.map(cat => (
                 <div key={cat.id} className="mb-6">
                   <h4 className="font-bold text-gray-700 mb-2 border-b pb-1">{cat.nome}</h4>
@@ -302,7 +385,7 @@ export default function NuovoOrdine() {
               <div>
                 <span className="text-sm text-gray-500 block">Totale pizza</span>
                 <span className="text-xl font-bold">
-                  €{(pizzaToCustomize.prezzoBase + tempAggiunte.reduce((a, b) => a + b.prezzo, 0)).toFixed(2)}
+                  €{(pizzaToCustomize.prezzoBase + (tempImpasto ? tempImpasto.sovrapprezzo : 0) + tempAggiunte.reduce((a, b) => a + b.prezzo, 0)).toFixed(2)}
                 </span>
               </div>
               <button
