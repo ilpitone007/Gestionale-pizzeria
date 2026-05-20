@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Clock, Printer, Phone } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Clock, Printer, Phone, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -8,7 +8,7 @@ export default function OrdiniAttivi() {
   const [ordini, setOrdini] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchOrdini = async () => {
+  const fetchOrdini = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/ordini/attivi`);
       const data = await res.json();
@@ -18,13 +18,24 @@ export default function OrdiniAttivi() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchOrdini();
     const interval = setInterval(fetchOrdini, 30000); // refresh every 30s
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchOrdini]);
+
+  const handleEvaso = async (id: number) => {
+    try {
+      await fetch(`${API_BASE}/ordini/${id}/stato`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stato: 'ritirato' })
+      });
+      fetchOrdini(); // Aggiorna lista
+    } catch (e) { console.error(e); }
+  };
 
   const handlePrint = (ordine: any, tipo: 'cucina' | 'cliente') => {
     const printWindow = window.open('', '_blank');
@@ -74,8 +85,9 @@ export default function OrdiniAttivi() {
           <div>Ordine n°: <strong>${ordine.numeroOrdine}</strong></div>
           <div>Cliente: ${ordine.nomeCliente}</div>
           ${ordine.telefonoCliente ? `<div>Tel: ${ordine.telefonoCliente}</div>` : ''}
-          <div style="font-size: 0.8em; margin-top: 5px; color: #666;">
-            Ricevuto: ${format(new Date(ordine.orarioOrdine), 'dd/MM/yyyy HH:mm')}
+          <div style="font-size: 0.9em; margin-top: 5px; color: #000;">
+            Data Ordine: ${format(new Date(ordine.orarioOrdine), 'dd/MM/yyyy')}<br/>
+            Ora Ricezione: ${format(new Date(ordine.orarioOrdine), 'HH:mm')}
           </div>
         </div>
 
@@ -188,15 +200,22 @@ export default function OrdiniAttivi() {
               <div className="p-3 border-t bg-gray-50 flex gap-2">
                 <button
                   onClick={() => handlePrint(ordine, 'cucina')}
-                  className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-50 text-sm font-medium transition-colors"
+                  className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 px-1 rounded flex items-center justify-center gap-1 md:gap-2 hover:bg-gray-50 text-[11px] md:text-sm font-medium transition-colors"
                 >
                   <Printer className="w-4 h-4" /> Cucina
                 </button>
                 <button
                   onClick={() => handlePrint(ordine, 'cliente')}
-                  className="flex-1 bg-gray-800 text-white py-2 rounded flex items-center justify-center gap-2 hover:bg-gray-900 text-sm font-medium transition-colors"
+                  className="flex-1 bg-gray-800 text-white py-2 px-1 rounded flex items-center justify-center gap-1 md:gap-2 hover:bg-gray-900 text-[11px] md:text-sm font-medium transition-colors"
                 >
                   <Printer className="w-4 h-4" /> Scontrino
+                </button>
+                <button
+                  onClick={() => handleEvaso(ordine.id)}
+                  className="flex-1 bg-green-600 text-white py-2 px-1 rounded flex items-center justify-center gap-1 md:gap-2 hover:bg-green-700 text-[11px] md:text-sm font-medium transition-colors"
+                  title="Segna come Evaso/Ritirato per le statistiche"
+                >
+                  <CheckCircle className="w-4 h-4" /> Evaso
                 </button>
               </div>
             </div>

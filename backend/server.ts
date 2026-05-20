@@ -132,6 +132,24 @@ app.post('/api/ordini', async (req, res) => {
   }
 });
 
+// API: Aggiorna stato ordine (es. ritirato)
+app.patch('/api/ordini/:id/stato', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { stato } = req.body;
+
+    const ordine = await prisma.ordine.update({
+      where: { id: parseInt(id) },
+      data: { stato, modificatoIl: new Date() }
+    });
+
+    res.json(ordine);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Errore durante l'aggiornamento dell'ordine" });
+  }
+});
+
 // API: Ordini Attivi
 app.get('/api/ordini/attivi', async (req, res) => {
   try {
@@ -165,6 +183,134 @@ app.get('/api/ordini/attivi', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Errore durante il recupero degli ordini' });
+  }
+});
+
+// API: Admin Pizze
+app.get('/api/admin/pizze', async (req, res) => {
+  try {
+    const pizze = await prisma.pizza.findMany({
+      include: { categoria: true },
+      orderBy: [{ categoria: { ordine: 'asc' } }, { nome: 'asc' }]
+    });
+    res.json(pizze);
+  } catch (error) {
+    res.status(500).json({ error: "Errore" });
+  }
+});
+
+app.patch('/api/admin/pizze/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { disponibile, prezzoBase, nome } = req.body;
+
+    const dataToUpdate: any = {};
+    if (disponibile !== undefined) dataToUpdate.disponibile = disponibile;
+    if (prezzoBase !== undefined) dataToUpdate.prezzoBase = parseFloat(prezzoBase);
+    if (nome !== undefined) dataToUpdate.nome = nome;
+
+    dataToUpdate.modificatoIl = new Date();
+
+    const pizza = await prisma.pizza.update({
+      where: { id: parseInt(id) },
+      data: dataToUpdate,
+      include: { categoria: true }
+    });
+    res.json(pizza);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Errore durante l'aggiornamento della pizza" });
+  }
+});
+
+// API: Admin Aggiunte
+app.get('/api/admin/aggiunte', async (req, res) => {
+  try {
+    const aggiunte = await prisma.aggiunta.findMany({
+      include: { categoria: true },
+      orderBy: { nome: 'asc' }
+    });
+    res.json(aggiunte);
+  } catch (error) {
+    res.status(500).json({ error: "Errore" });
+  }
+});
+
+app.patch('/api/admin/aggiunte/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { disponibile, prezzo, nome } = req.body;
+
+    const dataToUpdate: any = {};
+    if (disponibile !== undefined) dataToUpdate.disponibile = disponibile;
+    if (prezzo !== undefined) dataToUpdate.prezzo = parseFloat(prezzo);
+    if (nome !== undefined) dataToUpdate.nome = nome;
+
+    const agg = await prisma.aggiunta.update({
+      where: { id: parseInt(id) },
+      data: dataToUpdate,
+      include: { categoria: true }
+    });
+    res.json(agg);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Errore durante l'aggiornamento dell'aggiunta" });
+  }
+});
+
+// API: Statistiche Giornaliere
+app.get('/api/statistiche', async (req, res) => {
+  try {
+    const { data } = req.query; // Expects 'YYYY-MM-DD'
+
+    if (!data || typeof data !== 'string') {
+      return res.status(400).json({ error: "Data non fornita" });
+    }
+
+    const startOfDay = new Date(`${data}T00:00:00.000Z`);
+    const endOfDay = new Date(`${data}T23:59:59.999Z`);
+
+    // Tutti gli ordini della giornata che non sono annullati
+    const ordiniGiornata = await prisma.ordine.findMany({
+      where: {
+        dataOrdine: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        stato: { not: 'annullato' }
+      },
+      include: {
+        voci: true
+      }
+    });
+
+    const ordiniEvasi = ordiniGiornata.filter(o => o.stato === 'ritirato');
+
+    const incassoTotale = ordiniEvasi.reduce((acc, curr) => acc + curr.totaleOrdine, 0);
+    const incassoPrevisto = ordiniGiornata.reduce((acc, curr) => acc + curr.totaleOrdine, 0);
+
+    // Conteggio pizze fatte
+    const pizzeFatte: Record<string, number> = {};
+
+    ordiniEvasi.forEach(ordine => {
+      ordine.voci.forEach(voce => {
+        if (!pizzeFatte[voce.nomePizzaSnapshot]) {
+          pizzeFatte[voce.nomePizzaSnapshot] = 0;
+        }
+        pizzeFatte[voce.nomePizzaSnapshot] += 1;
+      });
+    });
+
+    res.json({
+      ordiniTotali: ordiniGiornata.length,
+      ordiniEvasi: ordiniEvasi.length,
+      incassoTotale,
+      incassoPrevisto,
+      pizzeFatte
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Errore statistiche" });
   }
 });
 

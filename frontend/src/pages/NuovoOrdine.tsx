@@ -102,7 +102,7 @@ export default function NuovoOrdine() {
         <h2 className="text-2xl font-bold">Menu</h2>
 
         {/* Categories */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {categorie.map(cat => (
             <button
               key={cat}
@@ -140,7 +140,7 @@ export default function NuovoOrdine() {
       </div>
 
       {/* Right Column: Cart */}
-      <div className="w-full md:w-96 bg-white border-t md:border-t-0 md:border-l flex flex-col min-h-[50vh] md:min-h-0 md:h-full shadow-lg">
+      <div className="w-full md:w-96 bg-white border-t-2 md:border-t-0 md:border-l flex flex-col h-auto md:min-h-0 md:h-full shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-lg">
         <div className="p-4 border-b bg-gray-50">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" /> Nuovo Ordine
@@ -184,7 +184,7 @@ export default function NuovoOrdine() {
         </div>
 
         {/* Cart Items */}
-        <div className="flex-1 overflow-auto p-4 space-y-3 bg-gray-50">
+        <div className="flex-1 overflow-auto p-4 space-y-3 bg-gray-50 min-h-[150px] md:min-h-0 max-h-[40vh] md:max-h-full">
           {voci.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-400">
               <ShoppingCart className="w-12 h-12 mb-2 opacity-20" />
