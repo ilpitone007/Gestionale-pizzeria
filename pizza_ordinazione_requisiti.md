@@ -808,7 +808,7 @@ enum TipoRitiro {
 - **Orario di consegna**: inserito manualmente dall'operatore; modificabile fino alla conferma stampa. Il vincolo `chk_orario_consegna` impedisce valori nel passato rispetto all'orario di ricezione.
 - **Avvisi scadenza**: la view `v_ordini_attivi` espone `minuti_alla_consegna`; il frontend evidenzia in rosso/arancio le righe con valore ≤ 20.
 - **Snapshot prezzi**: nome e prezzo vengono copiati in `nome_pizza_snapshot`, `prezzo_base_snapshot`, `nome_aggiunta_snapshot`, `prezzo_aggiunta_snapshot` al momento dell'inserimento voce. Modifiche future al listino non alterano gli ordini storici.
-- **Backup automatico**: configurare uno script cron (`0 3 * * * pg_dump pizzaorder > /backup/$(date +\%F).sql`) per dump notturno. Per SQLite: copia del file `.db`.
+- **Backup automatico**: configurare uno script cron per effettuare una copia notturna del database. Per SQLite, utilizzare uno script dedicato (es. `scripts/backup.sh`) che esegua la copia del file `.db` per il volume Docker.
 - **Multi-lingua**: predisporre le stringhe UI in un file `i18n.js` se si prevede espansione internazionale.
 - **Dark mode**: consigliata per ambienti con luci basse o uso serale intensivo.
 - **Integrazione futura**: la struttura SQL è predisposta per l'estensione a consegne a domicilio (aggiungere colonna `indirizzo_consegna` in `ordini`) e per l'integrazione con stampanti fiscali tramite API esterne.
