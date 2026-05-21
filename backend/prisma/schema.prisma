@@ -71,6 +71,15 @@ model Aggiunta {
   @@map("aggiunte")
 }
 
+model Impasto {
+  id           Int       @id @default(autoincrement())
+  nome         String    @unique
+  sovrapprezzo Float     @default(0)
+  disponibile  Boolean   @default(true)
+
+  @@map("impasti")
+}
+
 model Ordine {
   id               Int          @id @default(autoincrement())
   numeroOrdine     Int          @map("numero_ordine")
@@ -81,6 +90,8 @@ model Ordine {
   orarioConsegna   DateTime     @map("orario_consegna")
   tipoRitiro       String       @default("asporto") @map("tipo_ritiro")
   stato            String       @default("in_corso")
+  indirizzoConsegna String?     @map("indirizzo_consegna")
+  noteCitofono     String?      @map("note_citofono")
   noteGenerali     String?      @map("note_generali")
   totaleOrdine     Float        @default(0) @map("totale_ordine")
   creatoIl         DateTime     @default(now()) @map("creato_il")
@@ -98,6 +109,9 @@ model VoceOrdine {
   nomePizzaSnapshot    String                    @map("nome_pizza_snapshot")
   prezzoBaseSnapshot   Float                     @map("prezzo_base_snapshot")
   note                 String?
+  impastoId            Int?                      @map("impasto_id")
+  nomeImpastoSnapshot  String?                   @map("nome_impasto_snapshot")
+  prezzoImpastoSnapshot Float?                   @map("prezzo_impasto_snapshot")
   prezzoTotaleVoce     Float                     @map("prezzo_totale_voce")
   posizione            Int                       @default(1)
   ordine               Ordine                    @relation(fields: [ordineId], references: [id], onDelete: Cascade)
