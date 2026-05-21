@@ -24,7 +24,7 @@ export default function Statistiche() {
     } finally {
       setLoading(false);
     }
-  }, [dataCorrente]);
+  }, [dataCorrente, token]);
 
   useEffect(() => {
     fetchStats();

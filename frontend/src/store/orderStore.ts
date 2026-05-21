@@ -124,6 +124,10 @@ export const useOrderStore = create<OrderState>((set) => ({
       tipoRitiro: ordine.tipoRitiro,
       indirizzoConsegna: ordine.indirizzoConsegna || '',
       noteCitofono: ordine.noteCitofono || '',
+      metodoPagamento: ordine.metodoPagamento || 'contanti',
+      scontoFisso: ordine.scontoFisso || 0,
+      scontoPercentuale: ordine.scontoPercentuale || 0,
+      importoRicevuto: ordine.importoRicevuto !== null ? ordine.importoRicevuto : undefined,
       editOrderId: ordine.id,
       voci: ordine.voci.map((v: any) => ({
         id: Math.random().toString(36).substr(2, 9),

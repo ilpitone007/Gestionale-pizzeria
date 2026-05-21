@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
@@ -14,7 +16,7 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

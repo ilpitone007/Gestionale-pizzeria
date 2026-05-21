@@ -24,7 +24,7 @@ export default function OrdiniAttivi() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     fetchOrdini();

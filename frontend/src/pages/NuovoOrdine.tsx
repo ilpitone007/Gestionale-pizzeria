@@ -54,7 +54,7 @@ export default function NuovoOrdine() {
         setOrarioConsegna(format(rounded, "yyyy-MM-dd'T'HH:mm"));
       }
     }
-  }, []);
+  }, [editOrderId, loadOrdine, orarioConsegna, searchParams, setOrarioConsegna, token]);
 
   const categorie = ['Tutte', ...Array.from(new Set(menu.pizze.map(p => p.categoria)))];
   const pizzeFiltrate = selectedCategoria === 'Tutte'
