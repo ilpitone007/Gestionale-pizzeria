@@ -44,6 +44,32 @@ docker-compose up --build -d
 
 ---
 
+## 💻 Guida per l'Implementazione in Locale (Sviluppo)
+
+Tutto l'ambiente è già preconfigurato per funzionare immediatamente. Per eseguire l'applicazione in locale senza Docker, apri due terminali separati.
+
+### 1. Avvio del Backend
+Nel primo terminale, naviga nella cartella `backend`, installa le dipendenze e avvia il server (che configurerà in automatico il database SQLite `dev.db`):
+
+```bash
+cd backend
+npm install
+npm run start
+```
+Il backend sarà in ascolto sulla porta `3001`.
+
+### 2. Avvio del Frontend
+Nel secondo terminale, naviga nella cartella `frontend`, installa le dipendenze e avvia il server di sviluppo:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Il frontend sarà accessibile all'indirizzo `http://localhost:5173`.
+
+---
+
 ## 📖 Guida per l'Utilizzo (Dashboard Operatori)
 
 La dashboard, accessibile dal browser, consente di prendere rapidamente le comande e tenere traccia degli ordini attivi.

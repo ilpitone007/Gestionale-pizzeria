@@ -82,11 +82,11 @@ export default function OrdiniAttivi() {
         <title>Stampa ${tipo === 'cucina' ? 'Comanda' : 'Scontrino'} #${ordine.numeroOrdine}</title>
         <style>
           body { font-family: monospace; width: 300px; margin: 0 auto; padding: 20px; color: #000; }
-          .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+          .header { text-align: center; border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-b dark:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-700ottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
           .title { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; }
           .info { margin-bottom: 10px; font-size: 1.1em; }
-          .time { font-size: 1.5em; font-weight: bold; text-align: center; border: 2px solid #000; padding: 10px; margin: 15px 0; border-radius: 5px;}
-          .items { border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+          .time { font-size: 1.5em; font-weight: bold; text-align: center; border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700: 2px solid #000; padding: 10px; margin: 15px 0; border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-radius: 5px;}
+          .items { border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-b dark:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-700ottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
           .total { font-size: 1.5em; font-weight: bold; text-align: right; }
           .footer { text-align: center; margin-top: 20px; font-size: 0.9em; }
           @media print {
@@ -104,7 +104,7 @@ export default function OrdiniAttivi() {
           <div>Ordine n°: <strong>${ordine.numeroOrdine}</strong></div>
           <div>Cliente: ${ordine.nomeCliente}</div>
           ${ordine.telefonoCliente ? `<div>Tel: ${ordine.telefonoCliente}</div>` : ''}
-          ${ordine.tipoRitiro === 'domicilio' ? `<div style="margin-top: 5px; padding: 5px; border: 1px solid #000;"><strong>DOMICILIO:</strong><br/>${ordine.indirizzoConsegna}<br/>${ordine.noteCitofono ? `Note: ${ordine.noteCitofono}` : ''}</div>` : ''}
+          ${ordine.tipoRitiro === 'domicilio' ? `<div style="margin-top: 5px; padding: 5px; border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700: 1px solid #000;"><strong>DOMICILIO:</strong><br/>${ordine.indirizzoConsegna}<br/>${ordine.noteCitofono ? `Note: ${ordine.noteCitofono}` : ''}</div>` : ''}
           <div style="font-size: 0.9em; margin-top: 5px; color: #000;">
             Data Ordine: ${format(new Date(ordine.orarioOrdine), 'dd/MM/yyyy')}<br/>
             Ora Ricezione: ${format(new Date(ordine.orarioOrdine), 'HH:mm')}
@@ -120,7 +120,7 @@ export default function OrdiniAttivi() {
         </div>
 
         ${ordine.noteGenerali ? `
-          <div style="margin-bottom: 10px; padding: 5px; border: 1px solid #000;">
+          <div style="margin-bottom: 10px; padding: 5px; border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700: 1px solid #000;">
             <strong>Note Generali:</strong> ${ordine.noteGenerali}
           </div>
         ` : ''}
@@ -145,13 +145,13 @@ export default function OrdiniAttivi() {
     printWindow.document.close();
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Caricamento ordini...</div>;
+  if (loading) return <div className="p-8 text-center text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400">Caricamento ordini...</div>;
 
   return (
     <div className="p-6 h-full overflow-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Ordini Attivi</h2>
-        <button onClick={fetchOrdini} className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded">
+        <button onClick={fetchOrdini} className="text-sm bg-gray-100 dark:bg-gray-950 hover:bg-gray-200 px-3 py-1 rounded">
           Aggiorna
         </button>
       </div>
@@ -164,19 +164,19 @@ export default function OrdiniAttivi() {
           return (
             <div
               key={ordine.id}
-              className={`bg-white rounded-xl border-l-4 shadow-sm overflow-hidden flex flex-col ${
-                isLate ? 'border-l-red-600' : isUrgent ? 'border-l-orange-500' : 'border-l-green-500'
+              className={`bg-white dark:bg-gray-800 dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors rounded-xl border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-l-4 shadow-sm overflow-hidden flex flex-col ${
+                isLate ? 'border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-l-red-600' : isUrgent ? 'border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-l-orange-500' : 'border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-l-green-500'
               }`}
             >
               {/* Card Header */}
-              <div className="p-4 border-b bg-gray-50 flex justify-between items-start">
+              <div className="p-4 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-b dark:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-700 bg-gray-50 dark:bg-gray-900 dark:bg-gray-700 dark:bg-gray-700/50 dark:bg-gray-700/50 flex justify-between items-start">
                 <div>
-                  <div className="text-sm text-gray-500 mb-1">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 mb-1">
                     Ordine #{ordine.numeroOrdine} • {ordine.voci.length} pizze
                   </div>
                   <h3 className="font-bold text-lg">{ordine.nomeCliente}</h3>
                   {ordine.telefonoCliente && (
-                    <div className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+                    <div className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-300 dark:text-gray-300 flex items-center gap-1 mt-1">
                       <Phone className="w-3 h-3" /> {ordine.telefonoCliente}
                     </div>
                   )}
@@ -198,13 +198,13 @@ export default function OrdiniAttivi() {
               </div>
 
               {/* Card Body (Items) */}
-              <div className="p-4 flex-1 text-sm bg-white">
+              <div className="p-4 flex-1 text-sm bg-white dark:bg-gray-800 dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors">
                 <ul className="space-y-2">
                   {ordine.voci.map((voce: any) => (
-                    <li key={voce.id} className="border-b last:border-0 pb-2 last:pb-0">
+                    <li key={voce.id} className="border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-b dark:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-700 last:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-0 pb-2 last:pb-0">
                       <div className="font-semibold">{voce.posizione}. {voce.nomePizzaSnapshot}</div>
                       {voce.aggiunteSelezionate.length > 0 && (
-                        <div className="text-gray-500 text-xs pl-3 mt-1">
+                        <div className="text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 text-xs pl-3 mt-1">
                           {voce.aggiunteSelezionate.map((a: any) => `+ ${a.nomeAggiuntaSnapshot}`).join(', ')}
                         </div>
                       )}
@@ -215,18 +215,18 @@ export default function OrdiniAttivi() {
                   ))}
                 </ul>
                 {ordine.noteGenerali && (
-                  <div className="mt-3 p-2 bg-yellow-50 rounded text-yellow-800 text-xs border border-yellow-200">
+                  <div className="mt-3 p-2 bg-yellow-50 rounded text-yellow-800 text-xs border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-yellow-200">
                     <strong>Note:</strong> {ordine.noteGenerali}
                   </div>
                 )}
               </div>
 
               {/* Card Footer (Actions) */}
-              <div className="p-3 border-t bg-gray-50 flex flex-col gap-2">
+              <div className="p-3 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-t dark:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-700 bg-gray-50 dark:bg-gray-900 dark:bg-gray-700 dark:bg-gray-700/50 dark:bg-gray-700/50 flex flex-col gap-2">
                 <div className="flex gap-2">
                   <button
                     onClick={() => handlePrint(ordine, 'cucina')}
-                    className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 px-1 rounded flex items-center justify-center gap-1 hover:bg-gray-50 text-[11px] md:text-sm font-medium transition-colors"
+                    className="flex-1 bg-white dark:bg-gray-800 dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-300 text-gray-700 dark:text-gray-300 dark:text-gray-300 py-2 px-1 rounded flex items-center justify-center gap-1 hover:bg-gray-50 dark:bg-gray-900 dark:bg-gray-700 dark:bg-gray-700/50 dark:bg-gray-700/50 text-[11px] md:text-sm font-medium transition-colors"
                   >
                     <Printer className="w-3 h-3 md:w-4 md:h-4" /> Cucina
                   </button>
@@ -246,13 +246,13 @@ export default function OrdiniAttivi() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(ordine.id)}
-                    className="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-1.5 rounded flex items-center justify-center gap-1 hover:bg-blue-100 text-[11px] md:text-sm transition-colors font-medium"
+                    className="flex-1 bg-blue-50 text-blue-700 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-b dark:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-700lue-200 py-1.5 rounded flex items-center justify-center gap-1 hover:bg-blue-100 text-[11px] md:text-sm transition-colors font-medium"
                   >
                     <Edit className="w-3 h-3" /> Modifica
                   </button>
                   <button
                     onClick={() => handleDelete(ordine.id)}
-                    className="flex-1 bg-red-50 text-red-700 border border-red-200 py-1.5 rounded flex items-center justify-center gap-1 hover:bg-red-100 text-[11px] md:text-sm transition-colors font-medium"
+                    className="flex-1 bg-red-50 text-red-700 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-red-200 py-1.5 rounded flex items-center justify-center gap-1 hover:bg-red-100 text-[11px] md:text-sm transition-colors font-medium"
                   >
                     <Trash2 className="w-3 h-3" /> Annulla/Elimina
                   </button>
@@ -263,7 +263,7 @@ export default function OrdiniAttivi() {
         })}
 
         {ordini.length === 0 && (
-          <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-xl border border-dashed">
+          <div className="col-span-full py-12 text-center text-gray-400 dark:text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors rounded-xl border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-dashed">
             <Clock className="w-12 h-12 mx-auto mb-3 opacity-20" />
             <p className="text-lg">Nessun ordine attivo al momento</p>
           </div>
