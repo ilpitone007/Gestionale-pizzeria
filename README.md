@@ -42,6 +42,26 @@ docker-compose down
 docker-compose up --build -d
 ```
 
+### 5. Backup del Database
+L'applicazione include uno script per eseguire copie di backup del database SQLite locale senza dover spegnere i container.
+
+Puoi eseguire manualmente lo script dal terminale:
+```bash
+./scripts/backup.sh
+```
+
+I backup verranno salvati nella cartella `./backups` e lo script rimuoverà in automatico quelli più vecchi di 30 giorni.
+
+**Configurazione Automatica (Cron)**
+Per automatizzare il processo (es. ogni notte alle 03:00), puoi aggiungere lo script al crontab del tuo server host:
+```bash
+crontab -e
+```
+Aggiungi la seguente riga, specificando il percorso assoluto allo script:
+```cron
+0 3 * * * /percorso/assoluto/del/progetto/scripts/backup.sh >> /percorso/assoluto/del/progetto/backups/cron.log 2>&1
+```
+
 ---
 
 ## 📖 Guida per l'Utilizzo (Dashboard Operatori)
