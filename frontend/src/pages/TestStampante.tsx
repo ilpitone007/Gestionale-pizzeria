@@ -12,11 +12,11 @@ export default function TestStampante() {
         <title>Test Stampante</title>
         <style>
           body { font-family: monospace; width: 300px; margin: 0 auto; padding: 20px; color: #000; }
-          .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+          .header { text-align: center; border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-b dark:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-700ottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
           .title { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; }
           .info { margin-bottom: 10px; font-size: 1.1em; }
-          .time { font-size: 1.5em; font-weight: bold; text-align: center; border: 2px solid #000; padding: 10px; margin: 15px 0; border-radius: 5px;}
-          .items { border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+          .time { font-size: 1.5em; font-weight: bold; text-align: center; border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700: 2px solid #000; padding: 10px; margin: 15px 0; border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-radius: 5px;}
+          .items { border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-b dark:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-700ottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
           .total { font-size: 1.5em; font-weight: bold; text-align: right; }
           .footer { text-align: center; margin-top: 20px; font-size: 0.9em; }
           @media print {
@@ -82,13 +82,13 @@ export default function TestStampante() {
   };
 
   return (
-    <div className="p-4 md:p-8 h-full flex flex-col items-center justify-center bg-gray-50 text-center">
-      <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
+    <div className="p-4 md:p-8 h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 dark:bg-gray-700 dark:bg-gray-700/50 dark:bg-gray-700/50 text-center">
+      <div className="bg-white dark:bg-gray-800 dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors p-8 rounded-2xl shadow-lg max-w-md w-full">
         <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
           <Printer className="w-10 h-10" />
         </div>
         <h2 className="text-2xl font-bold mb-2">Test Stampante Termica</h2>
-        <p className="text-gray-500 mb-8">
+        <p className="text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 mb-8">
           Usa questa sezione per verificare che i margini, i caratteri e la larghezza della carta della tua stampante termica (es. 80mm) siano configurati correttamente.
         </p>
 
