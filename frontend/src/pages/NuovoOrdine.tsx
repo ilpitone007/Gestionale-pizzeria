@@ -3,6 +3,7 @@ import { useOrderStore } from '../store/orderStore';
 import { ShoppingCart, Plus, Trash2, Home, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -16,6 +17,8 @@ export default function NuovoOrdine() {
   const [consensoGDPR, setConsensoGDPR] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  const token = useAuthStore((state) => state.token);
 
   const {
     nomeCliente, setNomeCliente,
@@ -36,8 +39,10 @@ export default function NuovoOrdine() {
       .catch(err => console.error(err));
 
     const editId = searchParams.get('edit');
-    if (editId) {
-      fetch(`${API_BASE}/ordini/${editId}`)
+    if (editId && token) {
+      fetch(`${API_BASE}/ordini/${editId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
         .then(res => res.json())
         .then(data => { if (data && !data.error) loadOrdine(data); });
     } else {
@@ -83,6 +88,13 @@ export default function NuovoOrdine() {
     }, 0);
   };
 
+  const {
+    metodoPagamento, setMetodoPagamento,
+    scontoFisso, setScontoFisso,
+    scontoPercentuale, setScontoPercentuale,
+    importoRicevuto, setImportoRicevuto,
+  } = useOrderStore();
+
   const handleSubmit = async () => {
     if (!nomeCliente) return alert('Inserisci il nome del cliente');
     if (!orarioConsegna) return alert('Inserisci l\'orario di consegna');
@@ -96,7 +108,10 @@ export default function NuovoOrdine() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           nomeCliente,
           telefonoCliente,
@@ -288,6 +303,59 @@ export default function NuovoOrdine() {
           )}
         </div>
 
+        {/* Sconti e Pagamenti */}
+        <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-t border-b dark:border-gray-700 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Metodo Pagamento</label>
+              <select
+                className="w-full border dark:border-gray-700 rounded p-2 text-sm focus:outline-none dark:bg-gray-700"
+                value={metodoPagamento}
+                onChange={e => setMetodoPagamento(e.target.value)}
+              >
+                <option value="contanti">Contanti</option>
+                <option value="carta">Carta di Credito/POS</option>
+                <option value="buoni">Buoni Pasto</option>
+              </select>
+            </div>
+            {metodoPagamento === 'contanti' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Contante Ricevuto (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="w-full border dark:border-gray-700 rounded p-2 text-sm focus:outline-none dark:bg-gray-700"
+                  value={importoRicevuto || ''}
+                  onChange={e => setImportoRicevuto(e.target.value ? parseFloat(e.target.value) : undefined)}
+                  placeholder="Es: 50.00"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Sconto Fisso (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                className="w-full border dark:border-gray-700 rounded p-2 text-sm focus:outline-none dark:bg-gray-700"
+                value={scontoFisso || ''}
+                onChange={e => setScontoFisso(parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Sconto %</label>
+              <input
+                type="number"
+                className="w-full border dark:border-gray-700 rounded p-2 text-sm focus:outline-none dark:bg-gray-700"
+                value={scontoPercentuale || ''}
+                onChange={e => setScontoPercentuale(parseFloat(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Total & Submit */}
         <div className="p-4 border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-t dark:border dark:border-gray-700 dark:border-gray-700 dark:border-gray-700 dark:border-gray-700-gray-700 bg-white dark:bg-gray-800 dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors dark:bg-gray-800 transition-colors">
           <div className="mb-2">
@@ -311,9 +379,27 @@ export default function NuovoOrdine() {
               Confermo di aver informato il cliente riguardo l'uso e la conservazione dei suoi dati (GDPR) e di averne ottenuto il consenso.
             </label>
           </div>
-          <div className="flex justify-between items-end mb-4">
-            <span className="text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 font-medium">Totale</span>
-            <span className="text-2xl font-bold text-gray-900 dark:text-gray-200 dark:text-gray-100 dark:text-white dark:text-white">€{calculateTotal().toFixed(2)}</span>
+          <div className="flex flex-col mb-4">
+            <div className="flex justify-between items-end mb-1">
+              <span className="text-gray-500 font-medium">Subtotale</span>
+              <span className="text-lg text-gray-500">€{calculateTotal().toFixed(2)}</span>
+            </div>
+            {(scontoFisso > 0 || scontoPercentuale > 0) && (
+              <div className="flex justify-between items-end mb-1 text-green-600">
+                <span className="font-medium text-sm">Sconto</span>
+                <span className="text-sm">-€{(scontoFisso + (calculateTotal() * (scontoPercentuale / 100))).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-end pt-2 border-t dark:border-gray-700">
+              <span className="text-gray-900 dark:text-white font-bold">Totale Finale</span>
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">€{Math.max(0, calculateTotal() - scontoFisso - (calculateTotal() * (scontoPercentuale / 100))).toFixed(2)}</span>
+            </div>
+            {metodoPagamento === 'contanti' && importoRicevuto && importoRicevuto > Math.max(0, calculateTotal() - scontoFisso - (calculateTotal() * (scontoPercentuale / 100))) && (
+               <div className="flex justify-between items-end mt-1 text-orange-600">
+                 <span className="font-medium text-sm">Resto da dare</span>
+                 <span className="text-sm font-bold">€{(importoRicevuto - Math.max(0, calculateTotal() - scontoFisso - (calculateTotal() * (scontoPercentuale / 100)))).toFixed(2)}</span>
+               </div>
+            )}
           </div>
           <button
             onClick={handleSubmit}

@@ -109,4 +109,50 @@ router.patch('/aggiunte/:id', async (req, res) => {
   }
 });
 
+// --- API: Impostazioni ---
+router.get('/impostazioni', async (req, res) => {
+  try {
+    const impostazioni = await prisma.impostazione.findMany();
+    const config = impostazioni.reduce((acc: any, imp: any) => {
+      acc[imp.id] = imp.valore;
+      return acc;
+    }, {});
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ error: "Errore" });
+  }
+});
+
+router.patch('/impostazioni/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { valore } = req.body;
+
+    const imp = await prisma.impostazione.upsert({
+      where: { id },
+      update: { valore: String(valore) },
+      create: { id, valore: String(valore) }
+    });
+    res.json(imp);
+  } catch (error) {
+    res.status(500).json({ error: "Errore durante l'aggiornamento dell'impostazione" });
+  }
+});
+
+// --- API: Audit Logs ---
+router.get('/audit', async (req, res) => {
+  try {
+    const logs = await prisma.auditLog.findMany({
+      include: {
+        utente: { select: { username: true } }
+      },
+      orderBy: { creatoIl: 'desc' },
+      take: 200 // Limita agli ultimi 200 per prestazioni
+    });
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ error: "Errore" });
+  }
+});
+
 export default router;

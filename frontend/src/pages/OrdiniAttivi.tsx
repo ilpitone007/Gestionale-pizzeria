@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Clock, Printer, Phone, CheckCircle, Edit, Trash2, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -9,10 +10,13 @@ export default function OrdiniAttivi() {
   const [ordini, setOrdini] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const token = useAuthStore((state) => state.token);
 
   const fetchOrdini = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/ordini/attivi`);
+      const res = await fetch(`${API_BASE}/ordini/attivi`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       setOrdini(data);
     } catch (e) {
@@ -32,7 +36,10 @@ export default function OrdiniAttivi() {
     try {
       await fetch(`${API_BASE}/ordini/${id}/stato`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ stato: 'ritirato' })
       });
       fetchOrdini(); // Aggiorna lista
@@ -43,7 +50,8 @@ export default function OrdiniAttivi() {
     if (!confirm('Sei sicuro di voler eliminare definitivamente questo ordine?')) return;
     try {
       await fetch(`${API_BASE}/ordini/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       fetchOrdini();
     } catch (e) { console.error(e); }

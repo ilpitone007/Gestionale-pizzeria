@@ -4,10 +4,55 @@ import { PrismaClient } from '@prisma/client';
 const router = Router();
 const prisma = new PrismaClient();
 
+// Helper: Crea Audit Log
+async function createAuditLog(utenteId: number | undefined, azione: string, entitaId: number, dettagli?: string) {
+  try {
+    if (!utenteId) return;
+    await prisma.auditLog.create({
+      data: { utenteId, azione, entitaId, dettagli }
+    });
+  } catch (error) {
+    console.error("Errore salvataggio audit:", error);
+  }
+}
+
 // API: Crea Ordine
 router.post('/', async (req, res) => {
   try {
-    const { nomeCliente, telefonoCliente, orarioConsegna, noteGenerali, voci, tipoRitiro, indirizzoConsegna, noteCitofono } = req.body;
+    const {
+      nomeCliente, telefonoCliente, orarioConsegna, noteGenerali, voci,
+      tipoRitiro, indirizzoConsegna, noteCitofono,
+      metodoPagamento, scontoFisso, scontoPercentuale, importoRicevuto
+    } = req.body;
+
+    const utenteId = req.utente?.id;
+
+    // 0. Controlla il limite di ordini per la fascia oraria di consegna
+    const consegnaTime = new Date(orarioConsegna);
+
+    // Troviamo quanti ordini ci sono già in quella fascia (15 min)
+    // Es: consegna 20:15 -> fascia 20:00 - 20:15
+    const limiteSetting = await prisma.impostazione.findUnique({ where: { id: 'limite_ordini_fascia' }});
+    const maxOrdiniPerFascia = parseInt(limiteSetting?.valore || '10');
+
+    // Meno 15 minuti all'orario richiesto fino all'orario esatto
+    const fasciaStart = new Date(consegnaTime.getTime() - 15 * 60000);
+
+    const ordiniInFascia = await prisma.ordine.count({
+      where: {
+        orarioConsegna: {
+          gt: fasciaStart,
+          lte: consegnaTime
+        },
+        stato: { not: 'annullato' }
+      }
+    });
+
+    if (ordiniInFascia >= maxOrdiniPerFascia) {
+      return res.status(400).json({
+        error: `Fascia oraria satura. Limite massimo di ${maxOrdiniPerFascia} ordini raggiunto per quest'orario.`
+      });
+    }
 
     // 1. Get current max order number for today
     const startOfDay = new Date();
@@ -65,6 +110,20 @@ router.post('/', async (req, res) => {
       };
     });
 
+
+    // Calcolo Totale Finale (dopo sconti)
+    let scontoVal = scontoFisso || 0;
+    if (scontoPercentuale) {
+      scontoVal += (totaleOrdine * (scontoPercentuale / 100));
+    }
+    const totaleScontato = Math.max(0, totaleOrdine - scontoVal);
+
+    // Calcolo Resto
+    let resto = null;
+    if (metodoPagamento === 'contanti' && importoRicevuto !== undefined) {
+      resto = Math.max(0, importoRicevuto - totaleScontato);
+    }
+
     const ordine = await prisma.ordine.create({
       data: {
         numeroOrdine: nextNumeroOrdine,
@@ -75,7 +134,13 @@ router.post('/', async (req, res) => {
         tipoRitiro: tipoRitiro || 'asporto',
         indirizzoConsegna,
         noteCitofono,
-        totaleOrdine,
+        totaleOrdine: totaleScontato,
+        metodoPagamento,
+        scontoFisso: scontoFisso || 0,
+        scontoPercentuale: scontoPercentuale || 0,
+        importoRicevuto,
+        resto,
+        operatoreId: utenteId,
         voci: {
           create: vociCreate
         }
@@ -88,6 +153,9 @@ router.post('/', async (req, res) => {
         }
       }
     });
+
+    // Registra nell'audit log
+    await createAuditLog(utenteId, "CREAZIONE", ordine.id, `Creato ordine #${ordine.numeroOrdine}`);
 
     res.status(201).json(ordine);
   } catch (error) {
@@ -170,6 +238,8 @@ router.patch('/:id/stato', async (req, res) => {
       data: { stato, modificatoIl: new Date() }
     });
 
+    await createAuditLog(req.utente?.id, "AGGIORNAMENTO_STATO", ordine.id, `Stato modificato in: ${stato}`);
+
     res.json(ordine);
   } catch (error) {
     console.error(error);
@@ -181,7 +251,36 @@ router.patch('/:id/stato', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nomeCliente, telefonoCliente, orarioConsegna, noteGenerali, voci, tipoRitiro, indirizzoConsegna, noteCitofono } = req.body;
+    const {
+      nomeCliente, telefonoCliente, orarioConsegna, noteGenerali, voci,
+      tipoRitiro, indirizzoConsegna, noteCitofono,
+      metodoPagamento, scontoFisso, scontoPercentuale, importoRicevuto
+    } = req.body;
+
+    // 0. Controlla il limite di ordini per la fascia oraria di consegna (solo se l'orario cambia o se l'ordine non è ancora stato calcolato correttamente, ma in generale è meglio verificare sempre)
+    const consegnaTime = new Date(orarioConsegna);
+
+    const limiteSetting = await prisma.impostazione.findUnique({ where: { id: 'limite_ordini_fascia' }});
+    const maxOrdiniPerFascia = parseInt(limiteSetting?.valore || '10');
+
+    const fasciaStart = new Date(consegnaTime.getTime() - 15 * 60000);
+
+    const ordiniInFascia = await prisma.ordine.count({
+      where: {
+        id: { not: parseInt(id) }, // Escludi l'ordine che si sta modificando
+        orarioConsegna: {
+          gt: fasciaStart,
+          lte: consegnaTime
+        },
+        stato: { not: 'annullato' }
+      }
+    });
+
+    if (ordiniInFascia >= maxOrdiniPerFascia) {
+      return res.status(400).json({
+        error: `Fascia oraria satura. Limite massimo di ${maxOrdiniPerFascia} ordini raggiunto per quest'orario.`
+      });
+    }
 
     // Cancelliamo le vecchie voci e le ricreiamo per semplicità
     await prisma.voceOrdine.deleteMany({
@@ -223,6 +322,19 @@ router.put('/:id', async (req, res) => {
       };
     });
 
+    // Calcolo Totale Finale (dopo sconti)
+    let scontoVal = scontoFisso || 0;
+    if (scontoPercentuale) {
+      scontoVal += (totaleOrdine * (scontoPercentuale / 100));
+    }
+    const totaleScontato = Math.max(0, totaleOrdine - scontoVal);
+
+    // Calcolo Resto
+    let resto = null;
+    if (metodoPagamento === 'contanti' && importoRicevuto !== undefined) {
+      resto = Math.max(0, importoRicevuto - totaleScontato);
+    }
+
     const ordine = await prisma.ordine.update({
       where: { id: parseInt(id) },
       data: {
@@ -233,13 +345,20 @@ router.put('/:id', async (req, res) => {
         tipoRitiro: tipoRitiro || 'asporto',
         indirizzoConsegna,
         noteCitofono,
-        totaleOrdine,
+        totaleOrdine: totaleScontato,
+        metodoPagamento,
+        scontoFisso: scontoFisso || 0,
+        scontoPercentuale: scontoPercentuale || 0,
+        importoRicevuto,
+        resto,
         modificatoIl: new Date(),
         voci: {
           create: vociCreate
         }
       }
     });
+
+    await createAuditLog(req.utente?.id, "MODIFICA", ordine.id, `Ordine modificato`);
 
     res.json(ordine);
   } catch (error) {
@@ -252,9 +371,15 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.ordine.delete({
-      where: { id: parseInt(id) }
+
+    // Invece di eliminarlo completamente, lo passiamo in annullato per tracciarlo
+    const ordine = await prisma.ordine.update({
+      where: { id: parseInt(id) },
+      data: { stato: 'annullato', modificatoIl: new Date() }
     });
+
+    await createAuditLog(req.utente?.id, "CANCELLAZIONE", ordine.id, `Ordine annullato.`);
+
     res.json({ success: true });
   } catch (error) {
     console.error(error);

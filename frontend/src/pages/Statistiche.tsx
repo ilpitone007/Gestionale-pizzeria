@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { BarChart2, TrendingUp, CheckCircle, Package, Download } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -8,11 +9,14 @@ export default function Statistiche() {
   const [dataCorrente, setDataCorrente] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [stats, setStats] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
+  const token = useAuthStore((state) => state.token);
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/statistiche?data=${dataCorrente}`);
+      const res = await fetch(`${API_BASE}/statistiche?data=${dataCorrente}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       setStats(data);
     } catch (e) {

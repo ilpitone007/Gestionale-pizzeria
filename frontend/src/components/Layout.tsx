@@ -1,9 +1,11 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Pizza, ClipboardList, Settings, BarChart2, Printer, Moon, Sun } from 'lucide-react';
+import { Pizza, ClipboardList, Settings, BarChart2, Printer, Moon, Sun, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
 
 export default function Layout() {
   const location = useLocation();
+  const { utente, logout } = useAuthStore();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme');
     if (saved) return saved === 'dark';
@@ -83,6 +85,11 @@ export default function Layout() {
           </Link>
 
           <div className="hidden md:flex mt-auto pt-4 flex-col gap-2">
+            {utente && (
+              <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
+                Loggato come: <span className="text-gray-900 dark:text-white capitalize">{utente.username}</span>
+              </div>
+            )}
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
               className="flex items-center gap-3 p-2 md:px-4 md:py-3 rounded-lg transition-colors text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -90,16 +97,31 @@ export default function Layout() {
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               <span className="text-sm font-medium">{isDarkMode ? 'Tema Chiaro' : 'Tema Scuro'}</span>
             </button>
+            <button
+              onClick={logout}
+              className="flex items-center gap-3 p-2 md:px-4 md:py-3 rounded-lg transition-colors text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-sm font-medium">Logout</span>
+            </button>
           </div>
         </nav>
 
-        {/* Mobile Theme Toggle */}
-        <button
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="md:hidden absolute top-[-50px] right-4 p-2 rounded-full bg-white shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
-        >
-          {isDarkMode ? <Sun className="w-5 h-5 text-gray-500 dark:text-gray-300" /> : <Moon className="w-5 h-5 text-gray-500" />}
-        </button>
+        {/* Mobile Theme Toggle & Logout */}
+        <div className="md:hidden absolute top-[-50px] right-4 flex gap-2">
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="p-2 rounded-full bg-white shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+          >
+            {isDarkMode ? <Sun className="w-5 h-5 text-gray-500 dark:text-gray-300" /> : <Moon className="w-5 h-5 text-gray-500" />}
+          </button>
+          <button
+            onClick={logout}
+            className="p-2 rounded-full bg-white shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 text-red-600"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}

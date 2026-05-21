@@ -32,6 +32,10 @@ interface OrderState {
   tipoRitiro: string;
   indirizzoConsegna: string;
   noteCitofono: string;
+  metodoPagamento: string;
+  scontoFisso: number;
+  scontoPercentuale: number;
+  importoRicevuto: number | undefined;
   editOrderId: number | null;
   voci: VoceOrdine[];
 
@@ -42,6 +46,10 @@ interface OrderState {
   setTipoRitiro: (tipo: string) => void;
   setIndirizzoConsegna: (indirizzo: string) => void;
   setNoteCitofono: (note: string) => void;
+  setMetodoPagamento: (val: string) => void;
+  setScontoFisso: (val: number) => void;
+  setScontoPercentuale: (val: number) => void;
+  setImportoRicevuto: (val: number | undefined) => void;
   setEditOrderId: (id: number | null) => void;
 
   addVoce: (voce: Omit<VoceOrdine, 'id'>) => void;
@@ -59,6 +67,10 @@ export const useOrderStore = create<OrderState>((set) => ({
   tipoRitiro: 'asporto',
   indirizzoConsegna: '',
   noteCitofono: '',
+  metodoPagamento: 'contanti',
+  scontoFisso: 0,
+  scontoPercentuale: 0,
+  importoRicevuto: undefined,
   editOrderId: null,
   voci: [],
 
@@ -69,6 +81,10 @@ export const useOrderStore = create<OrderState>((set) => ({
   setTipoRitiro: (tipo) => set({ tipoRitiro: tipo }),
   setIndirizzoConsegna: (indirizzo) => set({ indirizzoConsegna: indirizzo }),
   setNoteCitofono: (note) => set({ noteCitofono: note }),
+  setMetodoPagamento: (val) => set({ metodoPagamento: val }),
+  setScontoFisso: (val) => set({ scontoFisso: val }),
+  setScontoPercentuale: (val) => set({ scontoPercentuale: val }),
+  setImportoRicevuto: (val) => set({ importoRicevuto: val }),
   setEditOrderId: (id) => set({ editOrderId: id }),
 
   addVoce: (voce) => set((state) => ({
@@ -88,6 +104,10 @@ export const useOrderStore = create<OrderState>((set) => ({
     tipoRitiro: 'asporto',
     indirizzoConsegna: '',
     noteCitofono: '',
+    metodoPagamento: 'contanti',
+    scontoFisso: 0,
+    scontoPercentuale: 0,
+    importoRicevuto: undefined,
     editOrderId: null,
     voci: []
   }),

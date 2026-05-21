@@ -94,12 +94,63 @@ model Ordine {
   noteCitofono     String?      @map("note_citofono")
   noteGenerali     String?      @map("note_generali")
   totaleOrdine     Float        @default(0) @map("totale_ordine")
+
+  metodoPagamento  String?      @map("metodo_pagamento")
+  scontoFisso      Float        @default(0) @map("sconto_fisso")
+  scontoPercentuale Float       @default(0) @map("sconto_percentuale")
+  importoRicevuto  Float?       @map("importo_ricevuto")
+  resto            Float?       @map("resto")
+  operatoreId      Int?         @map("operatore_id")
+
   creatoIl         DateTime     @default(now()) @map("creato_il")
   modificatoIl     DateTime     @default(now()) @map("modificato_il")
   voci             VoceOrdine[]
+  operatore        Utente?      @relation(fields: [operatoreId], references: [id], onDelete: SetNull)
 
   @@unique([numeroOrdine, dataOrdine])
   @@map("ordini")
+}
+
+model Utente {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  pin       String
+  ruolo     String   @default("operatore")
+  attivo    Boolean  @default(true)
+  ordini    Ordine[]
+  auditLogs AuditLog[]
+
+  @@map("utenti")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  utenteId    Int?     @map("utente_id")
+  azione      String
+  entitaId    Int?     @map("entita_id")
+  dettagli    String?
+  creatoIl    DateTime @default(now()) @map("creato_il")
+
+  utente      Utente?  @relation(fields: [utenteId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model CodiceSconto {
+  id          Int      @id @default(autoincrement())
+  codice      String   @unique
+  tipo        String
+  valore      Float
+  attivo      Boolean  @default(true)
+
+  @@map("codici_sconto")
+}
+
+model Impostazione {
+  id          String   @id
+  valore      String
+
+  @@map("impostazioni")
 }
 
 model VoceOrdine {
