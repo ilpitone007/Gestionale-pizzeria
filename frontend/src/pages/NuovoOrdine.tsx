@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useOrderStore } from '../store/orderStore';
 import { ShoppingCart, Plus, Trash2, Home, Package } from 'lucide-react';
 import { format } from 'date-fns';
@@ -80,13 +80,13 @@ export default function NuovoOrdine() {
     setPizzaToCustomize(null);
   };
 
-  const calculateTotal = () => {
+  const memoizedTotal = useMemo(() => {
     return voci.reduce((sum, voce) => {
       const aggiunteTotal = voce.aggiunte.reduce((a, b) => a + b.prezzo, 0);
       const impastoTotal = voce.impasto ? voce.impasto.sovrapprezzo : 0;
       return sum + voce.prezzoBase + aggiunteTotal + impastoTotal;
     }, 0);
-  };
+  }, [voci]);
 
   const {
     metodoPagamento, setMetodoPagamento,
@@ -382,22 +382,22 @@ export default function NuovoOrdine() {
           <div className="flex flex-col mb-4">
             <div className="flex justify-between items-end mb-1">
               <span className="text-gray-500 font-medium">Subtotale</span>
-              <span className="text-lg text-gray-500">€{calculateTotal().toFixed(2)}</span>
+              <span className="text-lg text-gray-500">€{memoizedTotal.toFixed(2)}</span>
             </div>
             {(scontoFisso > 0 || scontoPercentuale > 0) && (
               <div className="flex justify-between items-end mb-1 text-green-600">
                 <span className="font-medium text-sm">Sconto</span>
-                <span className="text-sm">-€{(scontoFisso + (calculateTotal() * (scontoPercentuale / 100))).toFixed(2)}</span>
+                <span className="text-sm">-€{(scontoFisso + (memoizedTotal * (scontoPercentuale / 100))).toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between items-end pt-2 border-t dark:border-gray-700">
               <span className="text-gray-900 dark:text-white font-bold">Totale Finale</span>
-              <span className="text-3xl font-bold text-gray-900 dark:text-white">€{Math.max(0, calculateTotal() - scontoFisso - (calculateTotal() * (scontoPercentuale / 100))).toFixed(2)}</span>
+              <span className="text-3xl font-bold text-gray-900 dark:text-white">€{Math.max(0, memoizedTotal - scontoFisso - (memoizedTotal * (scontoPercentuale / 100))).toFixed(2)}</span>
             </div>
-            {metodoPagamento === 'contanti' && importoRicevuto && importoRicevuto > Math.max(0, calculateTotal() - scontoFisso - (calculateTotal() * (scontoPercentuale / 100))) && (
+            {metodoPagamento === 'contanti' && importoRicevuto && importoRicevuto > Math.max(0, memoizedTotal - scontoFisso - (memoizedTotal * (scontoPercentuale / 100))) && (
                <div className="flex justify-between items-end mt-1 text-orange-600">
                  <span className="font-medium text-sm">Resto da dare</span>
-                 <span className="text-sm font-bold">€{(importoRicevuto - Math.max(0, calculateTotal() - scontoFisso - (calculateTotal() * (scontoPercentuale / 100)))).toFixed(2)}</span>
+                 <span className="text-sm font-bold">€{(importoRicevuto - Math.max(0, memoizedTotal - scontoFisso - (memoizedTotal * (scontoPercentuale / 100)))).toFixed(2)}</span>
                </div>
             )}
           </div>
