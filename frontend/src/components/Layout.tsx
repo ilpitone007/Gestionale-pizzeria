@@ -84,8 +84,9 @@ export default function Layout() {
 
           <div className="hidden md:flex mt-auto pt-4 flex-col gap-2">
             <button
+              aria-label={isDarkMode ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="flex items-center gap-3 p-2 md:px-4 md:py-3 rounded-lg transition-colors text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="flex items-center gap-3 p-2 md:px-4 md:py-3 rounded-lg transition-colors text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500"
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               <span className="text-sm font-medium">{isDarkMode ? 'Tema Chiaro' : 'Tema Scuro'}</span>
@@ -95,8 +96,9 @@ export default function Layout() {
 
         {/* Mobile Theme Toggle */}
         <button
+          aria-label={isDarkMode ? 'Passa al tema chiaro' : 'Passa al tema scuro'}
           onClick={() => setIsDarkMode(!isDarkMode)}
-          className="md:hidden absolute top-[-50px] right-4 p-2 rounded-full bg-white shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+          className="md:hidden absolute top-[-50px] right-4 p-2 rounded-full bg-white shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500"
         >
           {isDarkMode ? <Sun className="w-5 h-5 text-gray-500 dark:text-gray-300" /> : <Moon className="w-5 h-5 text-gray-500" />}
         </button>
