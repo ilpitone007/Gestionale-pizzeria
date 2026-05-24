@@ -44,8 +44,7 @@ router.get('/', async (req, res) => {
     }));
 
     res.json({ pizze: formattedPizze, categorieAggiunta, impasti });
-  } catch (error) {
-    console.error(error);
+  } catch {
     res.status(500).json({ error: 'Errore durante il recupero del menu' });
   }
 });
