@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useOrderStore } from '../store/orderStore';
 import { ShoppingCart, Plus, Trash2, Home, Package } from 'lucide-react';
 import { format } from 'date-fns';
@@ -51,10 +51,15 @@ export default function NuovoOrdine() {
     }
   }, []);
 
-  const categorie = ['Tutte', ...Array.from(new Set(menu.pizze.map(p => p.categoria)))];
-  const pizzeFiltrate = selectedCategoria === 'Tutte'
-    ? menu.pizze
-    : menu.pizze.filter(p => p.categoria === selectedCategoria);
+  const categorie = useMemo(() => {
+    return ['Tutte', ...Array.from(new Set(menu.pizze.map(p => p.categoria)))];
+  }, [menu.pizze]);
+
+  const pizzeFiltrate = useMemo(() => {
+    return selectedCategoria === 'Tutte'
+      ? menu.pizze
+      : menu.pizze.filter(p => p.categoria === selectedCategoria);
+  }, [menu.pizze, selectedCategoria]);
 
   const handleOpenCustomize = (pizza: any) => {
     setPizzaToCustomize(pizza);
