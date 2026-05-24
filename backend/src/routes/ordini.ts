@@ -29,41 +29,70 @@ router.post('/', async (req, res) => {
 
     const nextNumeroOrdine = (result._max.numeroOrdine || 0) + 1;
 
-    let totaleOrdine = 0;
 
     // Prepare voci
-    const vociCreate = voci.map((voce: any, index: number) => {
-      let prezzoTotaleVoce = voce.prezzoBase;
-      const aggiunteSelezionate = voce.aggiunte.map((agg: any) => {
-        prezzoTotaleVoce += agg.prezzo;
-        return {
-          aggiuntaId: agg.id,
-          nomeAggiuntaSnapshot: agg.nome,
-          prezzoAggiuntaSnapshot: agg.prezzo
-        };
-      });
+    let totaleOrdine = 0;
+    const vociCreate = [];
 
-      if (voce.impasto) {
-        prezzoTotaleVoce += voce.impasto.sovrapprezzo;
+    for (let index = 0; index < voci.length; index++) {
+      const voce = voci[index];
+
+      // Recupera il prezzo aggiornato della pizza dal DB
+      const pizzaDb = await prisma.pizza.findUnique({ where: { id: voce.pizzaId } });
+      if (!pizzaDb) {
+        return res.status(400).json({ error: `Pizza con id ${voce.pizzaId} non trovata` });
+      }
+
+      let prezzoTotaleVoce = pizzaDb.prezzoBase;
+      const nomePizzaSnapshot = pizzaDb.nome;
+      const prezzoBaseSnapshot = pizzaDb.prezzoBase;
+
+      // Recupera i prezzi delle aggiunte dal DB
+      const aggiunteSelezionate = [];
+      for (const agg of (voce.aggiunte || [])) {
+        const aggiuntaDb = await prisma.aggiunta.findUnique({ where: { id: agg.id } });
+        if (aggiuntaDb) {
+          prezzoTotaleVoce += aggiuntaDb.prezzo;
+          aggiunteSelezionate.push({
+            aggiuntaId: aggiuntaDb.id,
+            nomeAggiuntaSnapshot: aggiuntaDb.nome,
+            prezzoAggiuntaSnapshot: aggiuntaDb.prezzo
+          });
+        }
+      }
+
+      // Recupera il prezzo dell'impasto dal DB
+      let impastoId = null;
+      let nomeImpastoSnapshot = null;
+      let prezzoImpastoSnapshot = null;
+
+      if (voce.impasto && voce.impasto.id) {
+        const impastoDb = await prisma.impasto.findUnique({ where: { id: voce.impasto.id } });
+        if (impastoDb) {
+          impastoId = impastoDb.id;
+          nomeImpastoSnapshot = impastoDb.nome;
+          prezzoImpastoSnapshot = impastoDb.sovrapprezzo;
+          prezzoTotaleVoce += impastoDb.sovrapprezzo;
+        }
       }
 
       totaleOrdine += prezzoTotaleVoce;
 
-      return {
+      vociCreate.push({
         pizzaId: voce.pizzaId,
-        nomePizzaSnapshot: voce.nomePizza,
-        prezzoBaseSnapshot: voce.prezzoBase,
+        nomePizzaSnapshot,
+        prezzoBaseSnapshot,
         note: voce.note,
         prezzoTotaleVoce,
-        impastoId: voce.impasto?.id,
-        nomeImpastoSnapshot: voce.impasto?.nome,
-        prezzoImpastoSnapshot: voce.impasto?.sovrapprezzo,
+        impastoId,
+        nomeImpastoSnapshot,
+        prezzoImpastoSnapshot,
         posizione: index + 1,
         aggiunteSelezionate: {
           create: aggiunteSelezionate
         }
-      };
-    });
+      });
+    }
 
     const ordine = await prisma.ordine.create({
       data: {
@@ -183,45 +212,73 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { nomeCliente, telefonoCliente, orarioConsegna, noteGenerali, voci, tipoRitiro, indirizzoConsegna, noteCitofono } = req.body;
 
-    // Cancelliamo le vecchie voci e le ricreiamo per semplicità
-    await prisma.voceOrdine.deleteMany({
-      where: { ordineId: parseInt(id) }
-    });
 
     let totaleOrdine = 0;
+    const vociCreate = [];
 
-    const vociCreate = voci.map((voce: any, index: number) => {
-      let prezzoTotaleVoce = voce.prezzoBase;
-      const aggiunteSelezionate = voce.aggiunte.map((agg: any) => {
-        prezzoTotaleVoce += agg.prezzo;
-        return {
-          aggiuntaId: agg.id,
-          nomeAggiuntaSnapshot: agg.nome,
-          prezzoAggiuntaSnapshot: agg.prezzo
-        };
-      });
+    // 1. Validate and fetch prices FIRST before deleting anything
+    for (let index = 0; index < voci.length; index++) {
+      const voce = voci[index];
 
-      if (voce.impasto) {
-        prezzoTotaleVoce += voce.impasto.sovrapprezzo;
+      const pizzaDb = await prisma.pizza.findUnique({ where: { id: voce.pizzaId } });
+      if (!pizzaDb) {
+        return res.status(400).json({ error: `Pizza con id ${voce.pizzaId} non trovata` });
+      }
+
+      let prezzoTotaleVoce = pizzaDb.prezzoBase;
+      const nomePizzaSnapshot = pizzaDb.nome;
+      const prezzoBaseSnapshot = pizzaDb.prezzoBase;
+
+      const aggiunteSelezionate = [];
+      for (const agg of (voce.aggiunte || [])) {
+        const aggiuntaDb = await prisma.aggiunta.findUnique({ where: { id: agg.id } });
+        if (aggiuntaDb) {
+          prezzoTotaleVoce += aggiuntaDb.prezzo;
+          aggiunteSelezionate.push({
+            aggiuntaId: aggiuntaDb.id,
+            nomeAggiuntaSnapshot: aggiuntaDb.nome,
+            prezzoAggiuntaSnapshot: aggiuntaDb.prezzo
+          });
+        }
+      }
+
+      let impastoId = null;
+      let nomeImpastoSnapshot = null;
+      let prezzoImpastoSnapshot = null;
+
+      if (voce.impasto && voce.impasto.id) {
+        const impastoDb = await prisma.impasto.findUnique({ where: { id: voce.impasto.id } });
+        if (impastoDb) {
+          impastoId = impastoDb.id;
+          nomeImpastoSnapshot = impastoDb.nome;
+          prezzoImpastoSnapshot = impastoDb.sovrapprezzo;
+          prezzoTotaleVoce += impastoDb.sovrapprezzo;
+        }
       }
 
       totaleOrdine += prezzoTotaleVoce;
 
-      return {
+      vociCreate.push({
         pizzaId: voce.pizzaId,
-        nomePizzaSnapshot: voce.nomePizza,
-        prezzoBaseSnapshot: voce.prezzoBase,
+        nomePizzaSnapshot,
+        prezzoBaseSnapshot,
         note: voce.note,
         prezzoTotaleVoce,
-        impastoId: voce.impasto?.id,
-        nomeImpastoSnapshot: voce.impasto?.nome,
-        prezzoImpastoSnapshot: voce.impasto?.sovrapprezzo,
+        impastoId,
+        nomeImpastoSnapshot,
+        prezzoImpastoSnapshot,
         posizione: index + 1,
         aggiunteSelezionate: {
           create: aggiunteSelezionate
         }
-      };
+      });
+    }
+
+    // 2. Cancelliamo le vecchie voci e le ricreiamo per semplicità
+    await prisma.voceOrdine.deleteMany({
+      where: { ordineId: parseInt(id) }
     });
+
 
     const ordine = await prisma.ordine.update({
       where: { id: parseInt(id) },
