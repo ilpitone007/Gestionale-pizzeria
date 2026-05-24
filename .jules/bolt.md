@@ -1,3 +1,8 @@
 ## 2024-05-23 - Memoizing Derived State in React Forms Connected to Global Store
 **Learning:** In React applications using a global store (like Zustand), components connected to store values that frequently update (like form input fields) will fully re-render on every keystroke. If derived states, such as filtered lists (`pizzeFiltrate`) or unique categories derived from large arrays (`categorie`), are calculated directly in the render body, they cause unnecessary CPU usage and potential input lag because the calculation happens on every keystroke.
 **Action:** Always wrap derived list computations in `useMemo` when the component also subscribes to frequently updating state (like form inputs), making sure the dependency array only includes the variables that actually dictate the derived state (e.g., `menu.pizze` and `selectedCategoria`).
+## 2024-05-24 - Avoiding Premature Optimization & Parallelizing API Requests
+**Learning:**
+1. When optimizing, focus on resolving actual bottlenecks. Replacing simple sequential sequential fetching with `Promise.all` as done in `MenuAdmin.tsx` provides a clear and measurable load time improvement by avoiding a network waterfall.
+2. Avoid micro-optimizations that don't provide a measurable impact, especially if they add complexity or risk breaking existing code. Specifically, avoid memoizing cheap computations (like summing a small array) as the overhead of `useMemo` can be higher than the computation itself.
+**Action:** Prioritize network and I/O optimizations over micro-optimizing fast, synchronous calculations unless profiling explicitly identifies them as bottlenecks. Ensure any optimization preserves existing functionality exactly.
