@@ -11,16 +11,20 @@ export default function MenuAdmin() {
 
   const fetchData = useCallback(async () => {
     try {
-      const resPizze = await fetch(`${API_BASE}/admin/pizze`);
-      const dataPizze = await resPizze.json();
+      const [resPizze, resAggiunte, resImpasti] = await Promise.all([
+        fetch(`${API_BASE}/admin/pizze`),
+        fetch(`${API_BASE}/admin/aggiunte`),
+        fetch(`${API_BASE}/admin/impasti`)
+      ]);
+
+      const [dataPizze, dataAggiunte, dataImpasti] = await Promise.all([
+        resPizze.json(),
+        resAggiunte.json(),
+        resImpasti.json()
+      ]);
+
       setPizze(dataPizze);
-
-      const resAggiunte = await fetch(`${API_BASE}/admin/aggiunte`);
-      const dataAggiunte = await resAggiunte.json();
       setAggiunte(dataAggiunte);
-
-      const resImpasti = await fetch(`${API_BASE}/admin/impasti`);
-      const dataImpasti = await resImpasti.json();
       setImpasti(dataImpasti);
     } catch (e) {
       console.error(e);
