@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Settings, EyeOff, Eye } from 'lucide-react';
+import { Settings, EyeOff, Eye, Edit2, Check, X } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -8,6 +8,11 @@ export default function MenuAdmin() {
   const [aggiunte, setAggiunte] = useState<any[]>([]);
   const [impasti, setImpasti] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Edit states
+  const [editingPizzaId, setEditingPizzaId] = useState<number | null>(null);
+  const [editPizzaNome, setEditPizzaNome] = useState('');
+  const [editPizzaPrezzo, setEditPizzaPrezzo] = useState(0);
 
   const fetchData = useCallback(async () => {
     try {
@@ -40,6 +45,26 @@ export default function MenuAdmin() {
       body: JSON.stringify({ disponibile: !currentStatus })
     });
     fetchData();
+  };
+
+  const handleEditPizza = (p: any) => {
+    setEditingPizzaId(p.id);
+    setEditPizzaNome(p.nome);
+    setEditPizzaPrezzo(p.prezzoBase);
+  };
+
+  const handleSavePizza = async (id: number) => {
+    await fetch(`${API_BASE}/admin/pizze/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: editPizzaNome, prezzoBase: editPizzaPrezzo })
+    });
+    setEditingPizzaId(null);
+    fetchData();
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPizzaId(null);
   };
 
   const toggleImpasto = async (id: number, currentStatus: boolean) => {
@@ -77,17 +102,47 @@ export default function MenuAdmin() {
           <ul className="divide-y max-h-[60vh] overflow-y-auto">
             {pizze.map((p) => (
               <li key={p.id} className={`p-4 flex justify-between items-center transition-colors ${!p.disponibile ? 'bg-red-50 opacity-75' : 'hover:bg-gray-50 dark:bg-gray-900 dark:bg-gray-700 dark:bg-gray-700/50 dark:bg-gray-700/50'}`}>
-                <div>
-                  <div className={`font-bold ${!p.disponibile && 'line-through text-red-800'}`}>{p.nome}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400">{p.categoria.nome} • €{p.prezzoBase.toFixed(2)}</div>
+                {editingPizzaId === p.id ? (
+                  <div className="flex-1 flex gap-2 mr-2">
+                    <input
+                      type="text"
+                      value={editPizzaNome}
+                      onChange={(e) => setEditPizzaNome(e.target.value)}
+                      className="border rounded px-2 py-1 text-sm flex-1"
+                    />
+                    <input
+                      type="number"
+                      value={editPizzaPrezzo}
+                      onChange={(e) => setEditPizzaPrezzo(parseFloat(e.target.value))}
+                      className="border rounded px-2 py-1 text-sm w-20"
+                      step="0.50"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <div className={`font-bold ${!p.disponibile && 'line-through text-red-800'}`}>{p.nome}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400">{p.categoria.nome} • €{p.prezzoBase.toFixed(2)}</div>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  {editingPizzaId === p.id ? (
+                    <>
+                      <button onClick={() => handleSavePizza(p.id)} className="p-2 rounded-full text-green-600 hover:bg-green-100" title="Salva"><Check className="w-5 h-5" /></button>
+                      <button onClick={handleCancelEdit} className="p-2 rounded-full text-red-600 hover:bg-red-100" title="Annulla"><X className="w-5 h-5" /></button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => handleEditPizza(p)} className="p-2 rounded-full text-blue-600 hover:bg-blue-100" title="Modifica"><Edit2 className="w-5 h-5" /></button>
+                      <button
+                        onClick={() => togglePizza(p.id, p.disponibile)}
+                        className={`p-2 rounded-full ${p.disponibile ? 'bg-gray-100 dark:bg-gray-950 hover:bg-red-100 text-gray-600 hover:text-red-600' : 'bg-red-600 text-white shadow-md'}`}
+                        title={p.disponibile ? "Nascondi dal menu" : "Rendi disponibile"}
+                      >
+                        {p.disponibile ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                      </button>
+                    </>
+                  )}
                 </div>
-                <button
-                  onClick={() => togglePizza(p.id, p.disponibile)}
-                  className={`p-2 rounded-full ${p.disponibile ? 'bg-gray-100 dark:bg-gray-950 hover:bg-red-100 text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-300 dark:text-gray-300 hover:text-red-600' : 'bg-red-600 text-white shadow-md'}`}
-                  title={p.disponibile ? "Nascondi dal menu" : "Rendi disponibile"}
-                >
-                  {p.disponibile ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-                </button>
               </li>
             ))}
           </ul>

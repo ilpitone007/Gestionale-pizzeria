@@ -1,0 +1,5 @@
+
+> backend@1.0.0 start
+> ts-node server.ts
+
+Server running on port 3001
