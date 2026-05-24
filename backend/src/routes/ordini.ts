@@ -1,6 +1,17 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 
+interface AggiuntaRequest {
+  id: number;
+}
+
+interface VoceRequest {
+  pizzaId: number;
+  note?: string;
+  aggiunte?: AggiuntaRequest[];
+  impasto?: { id: number };
+}
+
 const router = Router();
 const prisma = new PrismaClient();
 
@@ -35,7 +46,7 @@ router.post('/', async (req, res) => {
     const vociCreate = [];
 
     for (let index = 0; index < voci.length; index++) {
-      const voce = voci[index];
+      const voce: VoceRequest = voci[index];
 
       // Recupera il prezzo aggiornato della pizza dal DB
       const pizzaDb = await prisma.pizza.findUnique({ where: { id: voce.pizzaId } });
@@ -145,7 +156,7 @@ router.get('/attivi', async (req, res) => {
 
     // Add missing minutes
     const now = new Date().getTime();
-    const formattedOrdini = ordini.map((o: any) => {
+    const formattedOrdini = ordini.map((o) => {
       const msDiff = new Date(o.orarioConsegna).getTime() - now;
       const minutiAllaConsegna = Math.round(msDiff / 60000);
       return {
@@ -218,7 +229,7 @@ router.put('/:id', async (req, res) => {
 
     // 1. Validate and fetch prices FIRST before deleting anything
     for (let index = 0; index < voci.length; index++) {
-      const voce = voci[index];
+      const voce: VoceRequest = voci[index];
 
       const pizzaDb = await prisma.pizza.findUnique({ where: { id: voce.pizzaId } });
       if (!pizzaDb) {
