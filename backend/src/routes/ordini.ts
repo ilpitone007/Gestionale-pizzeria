@@ -34,11 +34,29 @@ router.post('/', async (req, res) => {
     let totaleOrdine = 0;
     const vociCreate = [];
 
+    // ⚡ Bolt: Batch fetch prices (N+1 query fix)
+    // 🎯 Why: Instead of querying the database for every pizza, impasto, and aggiunta in a loop,
+    // we fetch all unique IDs in parallel at the start.
+    // 📊 Impact: Changes O(N*M) database queries into exactly 3 parallel queries, reducing order creation time significantly for large orders.
+    const uniquePizzaIds = [...new Set(voci.map((v: any) => v.pizzaId))] as number[];
+    const uniqueImpastoIds = [...new Set(voci.map((v: any) => v.impasto?.id).filter(Boolean))] as number[];
+    const uniqueAggiuntaIds = [...new Set(voci.flatMap((v: any) => (v.aggiunte || []).map((a: any) => a.id)).filter(Boolean))] as number[];
+
+    const [pizzeDb, impastiDb, aggiunteDb] = await Promise.all([
+      prisma.pizza.findMany({ where: { id: { in: uniquePizzaIds } } }),
+      uniqueImpastoIds.length > 0 ? prisma.impasto.findMany({ where: { id: { in: uniqueImpastoIds } } }) : Promise.resolve([]),
+      uniqueAggiuntaIds.length > 0 ? prisma.aggiunta.findMany({ where: { id: { in: uniqueAggiuntaIds } } }) : Promise.resolve([])
+    ]);
+
+    const pizzeMap = new Map(pizzeDb.map((p: any) => [p.id, p]));
+    const impastiMap = new Map(impastiDb.map((i: any) => [i.id, i]));
+    const aggiunteMap = new Map(aggiunteDb.map((a: any) => [a.id, a]));
+
     for (let index = 0; index < voci.length; index++) {
       const voce = voci[index];
 
-      // Recupera il prezzo aggiornato della pizza dal DB
-      const pizzaDb = await prisma.pizza.findUnique({ where: { id: voce.pizzaId } });
+      // Recupera il prezzo aggiornato della pizza dal DB (O(1) Map lookup)
+      const pizzaDb = pizzeMap.get(voce.pizzaId);
       if (!pizzaDb) {
         return res.status(400).json({ error: `Pizza con id ${voce.pizzaId} non trovata` });
       }
@@ -50,7 +68,7 @@ router.post('/', async (req, res) => {
       // Recupera i prezzi delle aggiunte dal DB
       const aggiunteSelezionate = [];
       for (const agg of (voce.aggiunte || [])) {
-        const aggiuntaDb = await prisma.aggiunta.findUnique({ where: { id: agg.id } });
+        const aggiuntaDb = aggiunteMap.get(agg.id);
         if (aggiuntaDb) {
           prezzoTotaleVoce += aggiuntaDb.prezzo;
           aggiunteSelezionate.push({
@@ -67,7 +85,7 @@ router.post('/', async (req, res) => {
       let prezzoImpastoSnapshot = null;
 
       if (voce.impasto && voce.impasto.id) {
-        const impastoDb = await prisma.impasto.findUnique({ where: { id: voce.impasto.id } });
+        const impastoDb = impastiMap.get(voce.impasto.id);
         if (impastoDb) {
           impastoId = impastoDb.id;
           nomeImpastoSnapshot = impastoDb.nome;
@@ -216,11 +234,26 @@ router.put('/:id', async (req, res) => {
     let totaleOrdine = 0;
     const vociCreate = [];
 
+    // ⚡ Bolt: Batch fetch prices (N+1 query fix)
+    const uniquePizzaIds = [...new Set(voci.map((v: any) => v.pizzaId))] as number[];
+    const uniqueImpastoIds = [...new Set(voci.map((v: any) => v.impasto?.id).filter(Boolean))] as number[];
+    const uniqueAggiuntaIds = [...new Set(voci.flatMap((v: any) => (v.aggiunte || []).map((a: any) => a.id)).filter(Boolean))] as number[];
+
+    const [pizzeDb, impastiDb, aggiunteDb] = await Promise.all([
+      prisma.pizza.findMany({ where: { id: { in: uniquePizzaIds } } }),
+      uniqueImpastoIds.length > 0 ? prisma.impasto.findMany({ where: { id: { in: uniqueImpastoIds } } }) : Promise.resolve([]),
+      uniqueAggiuntaIds.length > 0 ? prisma.aggiunta.findMany({ where: { id: { in: uniqueAggiuntaIds } } }) : Promise.resolve([])
+    ]);
+
+    const pizzeMap = new Map(pizzeDb.map((p: any) => [p.id, p]));
+    const impastiMap = new Map(impastiDb.map((i: any) => [i.id, i]));
+    const aggiunteMap = new Map(aggiunteDb.map((a: any) => [a.id, a]));
+
     // 1. Validate and fetch prices FIRST before deleting anything
     for (let index = 0; index < voci.length; index++) {
       const voce = voci[index];
 
-      const pizzaDb = await prisma.pizza.findUnique({ where: { id: voce.pizzaId } });
+      const pizzaDb = pizzeMap.get(voce.pizzaId);
       if (!pizzaDb) {
         return res.status(400).json({ error: `Pizza con id ${voce.pizzaId} non trovata` });
       }
@@ -231,7 +264,7 @@ router.put('/:id', async (req, res) => {
 
       const aggiunteSelezionate = [];
       for (const agg of (voce.aggiunte || [])) {
-        const aggiuntaDb = await prisma.aggiunta.findUnique({ where: { id: agg.id } });
+        const aggiuntaDb = aggiunteMap.get(agg.id);
         if (aggiuntaDb) {
           prezzoTotaleVoce += aggiuntaDb.prezzo;
           aggiunteSelezionate.push({
@@ -247,7 +280,7 @@ router.put('/:id', async (req, res) => {
       let prezzoImpastoSnapshot = null;
 
       if (voce.impasto && voce.impasto.id) {
-        const impastoDb = await prisma.impasto.findUnique({ where: { id: voce.impasto.id } });
+        const impastoDb = impastiMap.get(voce.impasto.id);
         if (impastoDb) {
           impastoId = impastoDb.id;
           nomeImpastoSnapshot = impastoDb.nome;
